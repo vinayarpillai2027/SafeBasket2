@@ -1,0 +1,24 @@
+# --- Python / Flask ---
+__pycache__/
+*.py[cod]
+*$py.class
+venv/
+.env
+instance/
+.pytest_cache/
+# Keep your database local so you don't overwrite it on push
+*.db
+
+# --- React / Node ---
+node_modules/
+dist/
+build/
+.eslintcache
+.DS_Store
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# --- Cursor / Editor ---
+.vscode/
+.cursor/
