@@ -1,0 +1,2533 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>SafeBasket v3 – Game-Theory-Based Decision Support</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,300;12..96,400;12..96,500;12..96,600;12..96,700;12..96,800&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.production.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.5/babel.min.js"></script>
+
+<style>
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#080e1f;--bg2:#0f1e3a;--bg3:#162a55;
+  --primary:#1E3A8A;--primary-l:#2d52b8;--primary-ll:#3b6fd4;
+  --accent:#FACC15;--accent-d:#e6b800;--accent-glow:rgba(250,204,21,0.3);
+  --glass:rgba(14,30,65,0.65);--border:rgba(59,111,212,0.22);
+  --text:#f0f4ff;--text2:#93a8d4;--text3:#5a72a8;
+  --green:#22c55e;--yellow:#f59e0b;--red:#ef4444;
+  --green-bg:rgba(34,197,94,0.1);--yellow-bg:rgba(245,158,11,0.1);--red-bg:rgba(239,68,68,0.1);
+  --radius:14px;--radius-lg:22px;--shadow:0 8px 32px rgba(0,0,0,0.35);
+}
+/* ══════════════════════════════════════════════════════════════════════
+   GAME THEORY STYLES
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Game Theory Section Container */
+.game-theory-section {
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: var(--radius-lg);
+  padding: 1.8rem;
+  margin: 1.5rem 0;
+  color: white;
+  box-shadow: 0 8px 32px rgba(102, 126, 234, 0.3);
+}
+
+.game-theory-section h3 {
+  font-size: 1.3rem;
+  font-weight: 700;
+  margin-bottom: 1.2rem;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Nash Equilibrium Display */
+.nash-equilibrium-card {
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  margin-bottom: 1rem;
+}
+
+.nash-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  background: rgba(34, 197, 94, 0.2);
+  border: 1px solid rgba(34, 197, 94, 0.4);
+  padding: 6px 14px;
+  border-radius: 100px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.8rem;
+}
+
+.nash-status.not-found {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: rgba(239, 68, 68, 0.4);
+}
+
+.optimal-strategy {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin: 0.8rem 0;
+  padding: 0.8rem;
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  border-left: 3px solid var(--accent);
+}
+
+/* Strategic Risk Assessment */
+.risk-assessment-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.risk-dimension {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 10px;
+  padding: 1rem;
+  border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.risk-dimension-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+}
+
+.risk-dimension-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  margin-bottom: 0.3rem;
+}
+
+.risk-dimension-bar {
+  height: 6px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.risk-dimension-fill {
+  height: 100%;
+  border-radius: 3px;
+  transition: width 0.6s ease;
+}
+
+/* Payoff Display */
+.payoff-display {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.payoff-card {
+  background: rgba(255, 255, 255, 0.08);
+  padding: 1rem;
+  border-radius: 10px;
+  text-align: center;
+}
+
+.payoff-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  opacity: 0.8;
+  margin-bottom: 0.5rem;
+}
+
+.payoff-value {
+  font-size: 1.8rem;
+  font-weight: 700;
+  color: var(--accent);
+}
+
+/* Confidence Meter */
+.confidence-meter {
+  margin-top: 1.2rem;
+}
+
+.confidence-bar-container {
+  height: 12px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 6px;
+  overflow: hidden;
+  margin-top: 0.5rem;
+}
+
+.confidence-bar-fill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #22c55e);
+  border-radius: 6px;
+  transition: width 0.8s ease;
+}
+
+/* Strategic Recommendation Banner */
+.strategic-banner {
+  background: rgba(255, 255, 255, 0.15);
+  border-radius: var(--radius);
+  padding: 1.2rem;
+  margin-top: 1.2rem;
+  border-left: 4px solid var(--accent);
+}
+
+.strategic-banner-title {
+  font-size: 0.9rem;
+  font-weight: 600;
+  margin-bottom: 0.5rem;
+  opacity: 0.9;
+}
+
+.strategic-banner-text {
+  font-size: 0.95rem;
+  line-height: 1.6;
+  opacity: 0.95;
+}
+
+/* Equilibrium Count Badge */
+.equilibrium-count {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: rgba(250, 204, 21, 0.2);
+  padding: 4px 12px;
+  border-radius: 100px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: 10px;
+}
+
+/* Alternative Strategies */
+.alternatives-list {
+  margin-top: 1rem;
+}
+
+.alternative-item {
+  background: rgba(255, 255, 255, 0.05);
+  padding: 0.8rem;
+  border-radius: 8px;
+  margin-bottom: 0.6rem;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.alternative-name {
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.alternative-payoff {
+  font-size: 0.85rem;
+  opacity: 0.8;
+}
+
+/* Mobile Responsive */
+@media (max-width: 768px) {
+  .game-theory-section {
+    padding: 1.2rem;
+  }
+  
+  .payoff-display {
+    grid-template-columns: 1fr;
+  }
+  
+  .risk-assessment-grid {
+    grid-template-columns: 1fr;
+  }
+}
+html{scroll-behavior:smooth}
+body{font-family:'Bricolage Grotesque',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;overflow-x:hidden;-webkit-font-smoothing:antialiased;letter-spacing:-0.01em}
+::-webkit-scrollbar{width:5px}::-webkit-scrollbar-track{background:var(--bg)}::-webkit-scrollbar-thumb{background:var(--primary);border-radius:3px}
+
+@keyframes fadeUp{from{opacity:0;transform:translateY(24px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+@keyframes spin{to{transform:rotate(360deg)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+@keyframes pulse-ring{0%{transform:scale(1);opacity:1}100%{transform:scale(1.5);opacity:0}}
+@keyframes shimmer{0%{background-position:-200% 0}100%{background-position:200% 0}}
+@keyframes orb1{0%,100%{transform:translate(0,0)}50%{transform:translate(50px,-30px)}}
+@keyframes orb2{0%,100%{transform:translate(0,0)}50%{transform:translate(-40px,40px)}}
+@keyframes toast-in{from{transform:translateX(110%);opacity:0}to{transform:translateX(0);opacity:1}}
+
+.fade-up{animation:fadeUp 0.55s ease both}
+.fade-in{animation:fadeIn 0.4s ease both}
+.float{animation:float 5s ease-in-out infinite}
+.spinner{animation:spin 0.85s linear infinite}
+.skeleton{background:linear-gradient(90deg,rgba(255,255,255,0.04) 25%,rgba(255,255,255,0.09) 50%,rgba(255,255,255,0.04) 75%);background-size:200% 100%;animation:shimmer 1.5s infinite;border-radius:8px}
+
+/* GLASS */
+.glass{background:var(--glass);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border:1px solid var(--border);border-radius:var(--radius-lg);box-shadow:var(--shadow)}
+
+/* BUTTONS */
+.btn{font-family:'Bricolage Grotesque',sans-serif;cursor:pointer;border:none;border-radius:var(--radius);font-size:0.92rem;font-weight:600;transition:all 0.22s;letter-spacing:-0.01em;display:inline-flex;align-items:center;gap:7px}
+.btn-yellow{background:var(--accent);color:var(--bg);padding:0.65rem 1.5rem}
+.btn-yellow:hover:not(:disabled){background:var(--accent-d);transform:translateY(-2px);box-shadow:0 6px 20px var(--accent-glow)}
+.btn-yellow:disabled{opacity:0.55;cursor:not-allowed}
+.btn-outline{background:transparent;color:var(--text2);border:1px solid var(--border);padding:0.65rem 1.4rem}
+.btn-outline:hover{border-color:var(--primary-ll);color:var(--text);background:rgba(59,111,212,0.08)}
+.btn-ghost{background:transparent;color:var(--text3);padding:0.5rem 1rem;font-size:0.85rem}
+.btn-ghost:hover{color:var(--text2)}
+.btn-danger{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,0.2);padding:0.45rem 0.9rem;font-size:0.8rem}
+.btn-danger:hover{background:rgba(239,68,68,0.18)}
+.btn-sm{padding:0.45rem 1rem;font-size:0.82rem}
+.btn-lg{padding:0.85rem 2rem;font-size:1rem}
+
+/* INPUTS */
+.input{background:rgba(255,255,255,0.05);border:1px solid var(--border);border-radius:var(--radius);padding:0.75rem 1.1rem;color:var(--text);font-family:'Bricolage Grotesque',sans-serif;font-size:0.92rem;outline:none;transition:border-color 0.22s,box-shadow 0.22s;width:100%}
+.input::placeholder{color:var(--text3)}
+.input:focus{border-color:var(--primary-ll);box-shadow:0 0 0 3px rgba(59,111,212,0.18)}
+label.field-label{display:block;font-size:0.75rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:6px}
+
+/* NAVBAR */
+.navbar{position:fixed;top:0;left:0;right:0;z-index:1000;height:64px;display:flex;align-items:center;justify-content:space-between;padding:0 2rem;background:rgba(8,14,31,0.8);backdrop-filter:blur(22px);-webkit-backdrop-filter:blur(22px);border-bottom:1px solid rgba(59,111,212,0.12);transition:box-shadow 0.3s}
+.navbar.scrolled{box-shadow:0 4px 24px rgba(0,0,0,0.4)}
+.logo{display:flex;align-items:center;gap:9px;font-size:1.3rem;font-weight:700;color:var(--text);text-decoration:none;cursor:pointer}
+.logo-icon{width:34px;height:34px;background:linear-gradient(135deg,var(--primary-ll),var(--accent));border-radius:9px;display:flex;align-items:center;justify-content:center;font-size:1rem;box-shadow:0 0 12px var(--accent-glow)}
+.logo span{color:var(--accent)}
+.nav-links{display:flex;align-items:center;gap:1.8rem;list-style:none}
+.nav-links a,.nav-links button{color:var(--text2);text-decoration:none;font-size:0.9rem;background:none;border:none;cursor:pointer;transition:color 0.2s;font-family:'Bricolage Grotesque',sans-serif}
+.nav-links a:hover,.nav-links button:hover{color:var(--text)}
+.nav-user{display:flex;align-items:center;gap:10px}
+.avatar{width:34px;height:34px;border-radius:50%;background:linear-gradient(135deg,var(--primary),var(--accent));display:flex;align-items:center;justify-content:center;font-size:0.85rem;font-weight:700;color:var(--bg)}
+
+/* SECTION */
+section{padding:5.5rem 2rem;position:relative}
+.section-inner{max-width:1180px;margin:0 auto;width:100%}
+.section-tag{display:inline-block;background:rgba(250,204,21,0.08);border:1px solid rgba(250,204,21,0.2);color:var(--accent);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;padding:4px 13px;border-radius:100px;margin-bottom:0.9rem}
+.section-title{font-size:clamp(1.7rem,2.8vw,2.6rem);font-weight:700;margin-bottom:0.8rem;letter-spacing:-0.02em}
+.section-sub{color:var(--text2);font-size:1rem;line-height:1.7;max-width:500px}
+.text-center{text-align:center}
+.section-sub.center{margin:0 auto}
+
+/* HERO */
+.hero{min-height:100vh;display:flex;align-items:center;overflow:hidden;padding-top:64px}
+.hero-bg{position:absolute;inset:0;background:linear-gradient(135deg,#060c1c 0%,#0d1e3a 40%,#160e50 70%,#060c1c 100%)}
+.orb{position:absolute;border-radius:50%;filter:blur(70px);pointer-events:none}
+.orb1{width:480px;height:480px;background:radial-gradient(circle,rgba(30,58,138,0.45) 0%,transparent 70%);top:-80px;left:-80px;animation:orb1 14s ease-in-out infinite}
+.orb2{width:360px;height:360px;background:radial-gradient(circle,rgba(250,204,21,0.07) 0%,transparent 70%);bottom:-40px;right:-60px;animation:orb2 18s ease-in-out infinite}
+.hero-grid{max-width:1180px;margin:0 auto;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:4rem;align-items:center;position:relative;z-index:1;padding:3rem 2rem}
+.hero-badge{display:inline-flex;align-items:center;gap:8px;background:rgba(250,204,21,0.08);border:1px solid rgba(250,204,21,0.25);border-radius:100px;padding:5px 14px;font-size:0.78rem;color:var(--accent);margin-bottom:1.4rem;letter-spacing:0.08em;text-transform:uppercase}
+.hero-badge::before{content:'';width:6px;height:6px;background:var(--accent);border-radius:50%;box-shadow:0 0 8px var(--accent)}
+.hero-title{font-size:clamp(2.2rem,4.5vw,3.6rem);font-weight:800;line-height:1.08;margin-bottom:1rem;letter-spacing:-0.03em}
+.hero-title .accent{color:var(--accent)}
+.hero-title .dim{color:var(--text2)}
+.hero-sub{font-size:1.1rem;color:var(--text2);margin-bottom:2.2rem;line-height:1.7;max-width:460px}
+.hero-actions{display:flex;gap:0.9rem;flex-wrap:wrap}
+
+/* MOCK CARD */
+.mock-wrap{position:relative;animation:float 5s ease-in-out infinite}
+.mock-card{background:rgba(12,24,52,0.85);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.8rem;box-shadow:0 24px 60px rgba(0,0,0,0.5)}
+.mock-ring-wrap{position:relative;width:130px;height:130px;margin:0 auto 1.2rem;display:flex;align-items:center;justify-content:center}
+.mock-ring-wrap svg{position:absolute;top:0;left:0;transform:rotate(-90deg)}
+.mock-score{font-size:2.2rem;font-weight:800;color:var(--green);z-index:1}
+.mock-label{font-size:0.62rem;color:var(--text3);z-index:1}
+.mock-pill{position:absolute;background:rgba(12,24,52,0.92);border:1px solid var(--border);border-radius:100px;padding:7px 14px;font-size:0.75rem;display:flex;align-items:center;gap:7px;backdrop-filter:blur(10px);white-space:nowrap;box-shadow:0 6px 18px rgba(0,0,0,0.3)}
+.mp1{top:-14px;left:-24px;color:var(--green);border-color:rgba(34,197,94,0.22);animation:float 4s 1s ease-in-out infinite}
+.mp2{bottom:20px;right:-30px;color:var(--accent);border-color:rgba(250,204,21,0.22);animation:float 4s 0.5s ease-in-out infinite}
+.dot{width:6px;height:6px;border-radius:50%}
+
+/* PAGE LAYOUT */
+.page{padding-top:64px;min-height:100vh}
+.page-inner{max-width:1100px;margin:0 auto;padding:2.5rem 2rem}
+.page-header{margin-bottom:2.5rem}
+.page-title{font-size:1.8rem;font-weight:700;margin-bottom:0.3rem}
+.page-sub{color:var(--text2);font-size:0.95rem}
+
+/* CARDS GRID */
+.cards-grid{display:grid;gap:1.2rem}
+.cards-2{grid-template-columns:1fr 1fr}
+.cards-3{grid-template-columns:repeat(3,1fr)}
+.cards-4{grid-template-columns:repeat(4,1fr)}
+.stat-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;backdrop-filter:blur(16px)}
+.stat-card .sc-icon{font-size:1.6rem;margin-bottom:0.8rem}
+.stat-card .sc-value{font-size:2rem;font-weight:700;line-height:1}
+.stat-card .sc-label{font-size:0.78rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.07em;margin-top:4px}
+
+/* SCORE PILLS */
+.score-pill{display:inline-flex;align-items:center;gap:5px;padding:3px 11px;border-radius:100px;font-size:0.78rem;font-weight:700}
+.sp-green{background:var(--green-bg);color:var(--green);border:1px solid rgba(34,197,94,0.2)}
+.sp-yellow{background:var(--yellow-bg);color:var(--yellow);border:1px solid rgba(245,158,11,0.2)}
+.sp-red{background:var(--red-bg);color:var(--red);border:1px solid rgba(239,68,68,0.2)}
+/* ═══════════════════════════════════════════════════════════════ */
+/* NEW: ENHANCED FEATURES STYLES */
+/* ═══════════════════════════════════════════════════════════════ */
+
+/* Timeline Warning */
+.timeline-warning{
+  background:var(--red-bg);
+  border:1px solid rgba(239,68,68,0.3);
+  border-radius:var(--radius);
+  padding:1rem;
+  margin-bottom:1rem;
+  color:var(--red);
+  font-weight:600;
+  font-size:0.9rem;
+  display:flex;
+  align-items:center;
+  gap:0.5rem;
+}
+
+/* Detailed Grievances */
+.detailed-grievances{
+  display:grid;
+  gap:0.8rem;
+}
+
+.grievance-card{
+  background:rgba(255,255,255,0.02);
+  border-left:4px solid;
+  border-radius:var(--radius);
+  padding:1rem;
+  transition:transform 0.2s;
+}
+
+.grievance-card:hover{transform:translateX(4px)}
+
+.grievance-card.severity-high{border-color:var(--red);background:var(--red-bg)}
+.grievance-card.severity-medium{border-color:var(--yellow);background:var(--yellow-bg)}
+.grievance-card.severity-low{border-color:var(--green);background:var(--green-bg)}
+
+.grievance-header{
+  display:flex;
+  align-items:center;
+  gap:0.8rem;
+  margin-bottom:0.8rem;
+  flex-wrap:wrap;
+}
+
+.severity-badge{
+  padding:3px 10px;
+  border-radius:12px;
+  font-size:0.7rem;
+  font-weight:600;
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+}
+
+.severity-badge.high{background:rgba(239,68,68,0.2);color:var(--red)}
+.severity-badge.medium{background:rgba(245,158,11,0.2);color:var(--yellow)}
+.severity-badge.low{background:rgba(34,197,94,0.2);color:var(--green)}
+
+.grievance-title{
+  flex:1;
+  font-weight:600;
+  font-size:0.9rem;
+}
+
+.grievance-mentions{
+  color:var(--text3);
+  font-size:0.8rem;
+}
+
+.grievance-example{
+  font-style:italic;
+  color:var(--text2);
+  margin-bottom:0.6rem;
+  padding:0.6rem;
+  background:rgba(0,0,0,0.2);
+  border-radius:6px;
+  font-size:0.82rem;
+}
+
+.grievance-recommendation{
+  color:var(--text3);
+  font-size:0.8rem;
+}
+
+/* Value for Money */
+.value-analysis,.credibility-analysis{
+  text-align:center;
+}
+
+.value-score-big,.cred-score-big{
+  font-size:2.8rem;
+  font-weight:800;
+  margin:1rem 0;
+}
+
+.value-verdict,.cred-assessment{
+  font-size:1rem;
+  color:var(--text2);
+  margin-bottom:1rem;
+}
+
+.value-stats{
+  display:flex;
+  justify-content:center;
+  gap:2rem;
+  margin-top:1rem;
+}
+
+.value-stat{
+  display:flex;
+  align-items:center;
+  gap:0.5rem;
+  font-size:0.9rem;
+}
+
+/* Reviewer Credibility */
+.cred-details{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:0.8rem;
+  margin-top:1rem;
+}
+
+.cred-item{
+  text-align:center;
+  padding:0.8rem;
+  background:rgba(255,255,255,0.02);
+  border-radius:var(--radius);
+  border:1px solid var(--border);
+}
+
+.cred-item-value{
+  font-size:1.4rem;
+  font-weight:700;
+  margin-bottom:0.3rem;
+}
+
+.cred-item-label{
+  font-size:0.7rem;
+  color:var(--text3);
+  text-transform:uppercase;
+  letter-spacing:0.05em;
+}
+
+/* Smart Recommendations */
+.smart-recs-list{
+  list-style:none;
+  margin-bottom:1.5rem;
+}
+
+.smart-recs-list li{
+  padding:0.8rem;
+  margin-bottom:0.6rem;
+  background:rgba(255,255,255,0.02);
+  border-radius:var(--radius);
+  border-left:3px solid var(--yellow);
+  font-size:0.88rem;
+  line-height:1.5;
+}
+
+.action-items-list{
+  list-style:none;
+}
+
+.action-item{
+  padding:0.7rem;
+  margin-bottom:0.5rem;
+  background:rgba(255,255,255,0.02);
+  border-radius:var(--radius);
+  color:var(--text2);
+  font-size:0.82rem;
+}
+
+.action-item::before{
+  content:"→ ";
+  color:var(--accent);
+  margin-right:0.3rem;
+}
+/* TABLE */
+.table-wrap{background:var(--glass);border:1px solid var(--border);border-radius:var(--radius-lg);overflow:hidden;backdrop-filter:blur(16px)}
+table{width:100%;border-collapse:collapse}
+th{text-align:left;padding:0.9rem 1.3rem;font-size:0.72rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.09em;border-bottom:1px solid var(--border);background:rgba(0,0,0,0.1);font-weight:500}
+td{padding:0.9rem 1.3rem;font-size:0.88rem;border-bottom:1px solid rgba(59,111,212,0.07);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tr:hover td{background:rgba(255,255,255,0.015)}
+.url-cell{color:var(--text2);max-width:240px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:0.82rem}
+
+/* AUTH */
+.auth-page{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--hero-bg);position:relative;overflow:hidden}
+.auth-card{width:100%;max-width:430px;padding:2.5rem;position:relative;z-index:1}
+.auth-title{font-size:1.7rem;font-weight:700;margin-bottom:0.4rem}
+.auth-sub{color:var(--text2);font-size:0.9rem;margin-bottom:2rem}
+.field{margin-bottom:1.2rem}
+.auth-divider{text-align:center;color:var(--text3);font-size:0.82rem;margin:1.2rem 0;position:relative}
+.auth-divider::before,.auth-divider::after{content:'';position:absolute;top:50%;width:42%;height:1px;background:var(--border)}
+.auth-divider::before{left:0}.auth-divider::after{right:0}
+
+/* ANALYZER */
+.analyzer-card{padding:2rem}
+.url-row{display:flex;gap:0.8rem}
+
+/* RESULTS */
+.results-wrap{margin-top:2rem;animation:fadeUp 0.5s ease both}
+.results-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem}
+.result-panel{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:var(--radius);padding:1.4rem}
+.result-panel-full{grid-column:1/-1}
+.rp-label{font-size:0.7rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.09em;margin-bottom:1rem}
+
+/* TRUST CIRCLE */
+.trust-wrap{display:flex;flex-direction:column;align-items:center;gap:4px}
+.trust-ring{position:relative;width:150px;height:150px;display:flex;align-items:center;justify-content:center}
+.trust-ring svg{position:absolute;top:0;left:0;transform:rotate(-90deg)}
+.trust-glow{position:absolute;width:110px;height:110px;border-radius:50%;filter:blur(18px);opacity:0.22}
+.trust-num{font-size:2.8rem;font-weight:800;z-index:1;line-height:1}
+.trust-sub{font-size:0.65rem;color:var(--text3);text-transform:uppercase;letter-spacing:0.1em;z-index:1}
+
+/* SENTIMENT BARS */
+.sent-bar-wrap{display:flex;flex-direction:column;gap:12px}
+.sent-row{display:flex;flex-direction:column;gap:5px}
+.sent-meta{display:flex;justify-content:space-between;font-size:0.83rem}
+.sent-track{height:7px;background:rgba(255,255,255,0.05);border-radius:4px;overflow:hidden}
+.sent-fill{height:100%;border-radius:4px;transition:width 1.4s cubic-bezier(0.4,0,0.2,1)}
+
+/* RISK GRID */
+.risk-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.risk-item{display:flex;align-items:center;gap:9px;padding:9px 13px;border-radius:10px;font-size:0.82rem;border:1px solid}
+.risk-high{background:var(--red-bg);border-color:rgba(239,68,68,0.18);color:#fca5a5}
+.risk-med{background:var(--yellow-bg);border-color:rgba(245,158,11,0.18);color:#fcd34d}
+.risk-low{background:var(--green-bg);border-color:rgba(34,197,94,0.18);color:#86efac}
+
+/* RECO BADGE */
+.reco-badge{display:flex;align-items:center;justify-content:center;gap:10px;padding:1.1rem 1.8rem;border-radius:var(--radius);font-size:1rem;font-weight:700;border:1px solid;letter-spacing:0.01em}
+.reco-safe{background:var(--green-bg);border-color:rgba(34,197,94,0.28);color:var(--green)}
+.reco-caution{background:var(--yellow-bg);border-color:rgba(245,158,11,0.28);color:var(--yellow)}
+.reco-risk{background:var(--red-bg);border-color:rgba(239,68,68,0.28);color:var(--red)}
+
+/* EXPLANATION BOX */
+.explanation{background:rgba(30,58,138,0.08);border:1px solid rgba(59,111,212,0.15);border-radius:var(--radius);padding:1.2rem 1.5rem;font-size:0.88rem;color:var(--text2);line-height:1.75}
+
+/* FAKE RISK */
+.fake-signals{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.signal-item{display:flex;justify-content:space-between;align-items:center;padding:8px 12px;background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:9px;font-size:0.8rem}
+.signal-label{color:var(--text2)}
+.signal-val{font-weight:600}
+
+/* FEATURES */
+.features-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:1.2rem;margin-top:2.5rem}
+.feature-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.8rem 1.4rem;transition:all 0.3s;cursor:default;position:relative;overflow:hidden}
+.feature-card:hover{border-color:rgba(59,111,212,0.45);transform:translateY(-5px);box-shadow:0 16px 36px rgba(0,0,0,0.28),0 0 18px rgba(30,58,138,0.25)}
+.fi{width:48px;height:48px;background:rgba(250,204,21,0.09);border:1px solid rgba(250,204,21,0.18);border-radius:13px;display:flex;align-items:center;justify-content:center;font-size:1.3rem;margin-bottom:1rem;transition:all 0.3s}
+.feature-card:hover .fi{background:rgba(250,204,21,0.16);box-shadow:0 0 18px rgba(250,204,21,0.18)}
+.ft{font-size:0.95rem;font-weight:700;margin-bottom:0.5rem}
+.fd{font-size:0.82rem;color:var(--text2);line-height:1.6}
+
+/* HOW IT WORKS */
+.steps-row{display:grid;grid-template-columns:repeat(3,1fr);gap:2.5rem;margin-top:2.5rem;position:relative}
+.steps-row::before{content:'';position:absolute;top:35px;left:calc(16.67% + 35px);right:calc(16.67% + 35px);height:1px;background:linear-gradient(90deg,transparent,var(--primary-ll),var(--accent),var(--primary-ll),transparent);opacity:0.35}
+.step-card{text-align:center}
+.step-num-wrap{position:relative;display:inline-block;margin-bottom:1.4rem}
+.step-num{width:70px;height:70px;background:linear-gradient(135deg,var(--primary),var(--primary-ll));border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.6rem;margin:0 auto;position:relative;z-index:1;box-shadow:0 0 26px rgba(30,58,138,0.45);border:2px solid rgba(59,111,212,0.35)}
+.step-pulse{position:absolute;inset:-6px;border-radius:50%;border:2px solid var(--primary-ll);opacity:0.35;animation:pulse-ring 2.2s ease infinite}
+.step-title{font-size:1rem;font-weight:700;margin-bottom:0.5rem}
+.step-desc{font-size:0.84rem;color:var(--text2);line-height:1.6}
+
+/* COMPARE */
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:2rem}
+.compare-col{background:rgba(255,255,255,0.03);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem}
+.compare-col.winner{border-color:rgba(250,204,21,0.35);background:rgba(250,204,21,0.04)}
+.winner-badge{display:inline-flex;align-items:center;gap:6px;background:rgba(250,204,21,0.1);border:1px solid rgba(250,204,21,0.3);color:var(--accent);font-size:0.72rem;font-weight:700;padding:3px 10px;border-radius:100px;margin-bottom:0.8rem;text-transform:uppercase;letter-spacing:0.06em}
+
+/* TOAST */
+.toast-wrap{position:fixed;top:74px;right:18px;z-index:2000;display:flex;flex-direction:column;gap:9px}
+.toast{padding:11px 18px;border-radius:var(--radius);font-size:0.88rem;display:flex;align-items:center;gap:9px;animation:toast-in 0.35s ease both;box-shadow:0 8px 22px rgba(0,0,0,0.4);border:1px solid;max-width:330px}
+.toast-error{background:rgba(239,68,68,0.14);border-color:rgba(239,68,68,0.28);color:#fca5a5}
+.toast-success{background:rgba(34,197,94,0.11);border-color:rgba(34,197,94,0.28);color:#86efac}
+.toast-info{background:rgba(59,111,212,0.14);border-color:rgba(59,111,212,0.28);color:#93c5fd}
+
+/* DIVIDER */
+.divider{height:1px;background:linear-gradient(90deg,transparent,var(--border),transparent);margin:0 auto;max-width:880px}
+
+/* FOOTER */
+footer{background:var(--bg);border-top:1px solid var(--border);padding:2.2rem;text-align:center}
+.footer-logo{font-size:1.2rem;font-weight:700;margin-bottom:0.4rem}
+.footer-logo span{color:var(--accent)}
+.footer-credit{font-size:0.8rem;color:var(--text3);line-height:1.9}
+
+/* LOADING */
+.spinner-ring{width:48px;height:48px;border:3px solid rgba(59,111,212,0.18);border-top-color:var(--accent);border-radius:50%;animation:spin 0.85s linear infinite}
+.loading-center{display:flex;flex-direction:column;align-items:center;gap:1.2rem;padding:3rem}
+.loading-text{color:var(--text2);font-size:0.9rem}
+
+/* EMPTY */
+.empty-state{text-align:center;padding:3.5rem;color:var(--text3)}
+.empty-state .em{font-size:2.2rem;margin-bottom:0.7rem}
+
+/* DASHBOARD CHART */
+.chart-card{background:var(--glass);border:1px solid var(--border);border-radius:var(--radius-lg);padding:1.5rem;backdrop-filter:blur(16px)}
+.chart-title{font-size:0.9rem;font-weight:600;margin-bottom:1.2rem;color:var(--text2)}
+
+/* RESPONSIVE */
+@media(max-width:900px){
+  .hero-grid,.compare-grid,.cards-4,.features-grid{grid-template-columns:1fr 1fr}
+  .cards-3{grid-template-columns:1fr 1fr}
+  .steps-row{grid-template-columns:1fr;gap:2rem}.steps-row::before{display:none}
+}
+@media(max-width:640px){
+  .hero-grid,.compare-grid,.results-grid,.cards-2,.cards-3,.cards-4,.features-grid,.risk-grid,.fake-signals{grid-template-columns:1fr}
+  .nav-links{display:none}
+  section{padding:4rem 1.2rem}
+  .url-row{flex-direction:column}
+}
+
+/* ══════════════════════════════════════════════════════════════════════
+   ENHANCED LANDING PAGE STYLES
+   ══════════════════════════════════════════════════════════════════════ */
+
+/* Floating Shopping Icons Animation */
+.shopping-icons-float {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+  overflow: hidden;
+}
+
+.float-icon {
+  position: absolute;
+  font-size: 3rem;
+  opacity: 0.1;
+  animation: float 6s ease-in-out infinite;
+}
+
+@keyframes float {
+  0%, 100% { 
+    transform: translateY(0px) rotate(0deg); 
+  }
+  50% { 
+    transform: translateY(-20px) rotate(5deg); 
+  }
+}
+
+/* Enhanced Platform Cards */
+.platform-card {
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.platform-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+}
+
+.platform-icon-wrapper {
+  width: 80px;
+  height: 80px;
+  border-radius: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 0.8rem;
+  transition: all 0.3s ease;
+}
+
+.platform-card:hover .platform-icon-wrapper {
+  transform: scale(1.1);
+}
+
+/* Stats Grid */
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+  gap: 2rem;
+  text-align: center;
+}
+
+.stat-item {
+  padding: 1rem;
+}
+
+@media (max-width: 640px) {
+  .stats-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+  }
+}
+</style>
+</head>
+<body>
+<div id="root"></div>
+<script type="text/babel">
+const {useState,useEffect,useRef,useCallback,useMemo}=React;
+const API="http://localhost:5000";
+
+/* ── API helper ─────────────────────────────────────────────────────── */
+async function apiFetch(path,opts={}){
+  const token=localStorage.getItem("sb_token");
+  const headers={"Content-Type":"application/json",...(token?{Authorization:`Bearer ${token}`}:{})};
+  const res=await fetch(API+path,{headers,...opts});
+  const json=await res.json();
+  return {ok:res.ok,status:res.status,data:json.data,message:json.message,json};
+}
+
+/* ── Toast context ──────────────────────────────────────────────────── */
+function ToastContainer({toasts}){
+  return <div className="toast-wrap">{toasts.map(t=>(
+    <div key={t.id} className={`toast toast-${t.type}`}>
+      {t.type==="error"?"⚠️":t.type==="success"?"✅":"ℹ️"} {t.message}
+    </div>
+  ))}</div>;
+}
+
+/* ── Score helpers ──────────────────────────────────────────────────── */
+function scoreColor(s){return s>=70?"#22c55e":s>=40?"#f59e0b":"#ef4444"}
+function scoreClass(s){return s>=70?"sp-green":s>=40?"sp-yellow":"sp-red"}
+function recoClass(s){return s>=70?"reco-safe":s>=40?"reco-caution":"reco-risk"}
+function classLabel(s){return s>=70?"Safe":s>=40?"Moderate Risk":"High Risk"}
+
+/* ── TrustCircle ────────────────────────────────────────────────────── */
+function TrustCircle({score}){
+  const [disp,setDisp]=useState(0);
+  const C=2*Math.PI*65,off=C-(disp/100)*C,col=scoreColor(score);
+  useEffect(()=>{
+    let v=0;const step=score/55;
+    const t=setInterval(()=>{v+=step;if(v>=score){setDisp(score);clearInterval(t)}else setDisp(Math.floor(v));},16);
+    return()=>clearInterval(t);
+  },[score]);
+  return(
+    <div className="trust-wrap">
+      <div className="trust-ring">
+        <div className="trust-glow" style={{background:col}}/>
+        <svg width="150" height="150" viewBox="0 0 150 150">
+          <circle cx="75" cy="75" r="65" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="11"/>
+          <circle cx="75" cy="75" r="65" fill="none" stroke={col} strokeWidth="11"
+            strokeDasharray={C} strokeDashoffset={off} strokeLinecap="round"
+            style={{transition:"stroke-dashoffset 1.4s cubic-bezier(0.4,0,0.2,1)"}}/>
+        </svg>
+        <div style={{zIndex:1,textAlign:"center"}}>
+          <div className="trust-num" style={{color:col}}>{disp}</div>
+          <div className="trust-sub">/ 100</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+/* ── SentBar ────────────────────────────────────────────────────────── */
+function SentBar({label,value,color}){
+  const [w,setW]=useState(0);
+  useEffect(()=>{const t=setTimeout(()=>setW(value),150);return()=>clearTimeout(t);},[value]);
+  return(
+    <div className="sent-row">
+      <div className="sent-meta"><span style={{color:"rgba(240,244,255,0.85)"}}>{label}</span><span style={{color}}>{value?.toFixed(1)}%</span></div>
+      <div className="sent-track"><div className="sent-fill" style={{width:`${w}%`,background:color}}/></div>
+    </div>
+  );
+}
+
+/* ── Navbar ─────────────────────────────────────────────────────────── */
+function Navbar({user,page,setPage,onLogout}){
+  const [scrolled,setScrolled]=useState(false);
+  useEffect(()=>{const h=()=>setScrolled(window.scrollY>20);window.addEventListener("scroll",h);return()=>window.removeEventListener("scroll",h);},[]);
+  return(
+    <nav className={`navbar${scrolled?" scrolled":""}`}>
+      <div className="logo" onClick={()=>setPage(user?"dashboard":"landing")}>
+        <div className="logo-icon">🛡️</div>
+        Safe<span>Basket</span>
+      </div>
+      {user?(
+        <>
+          <ul className="nav-links">
+            <li><button onClick={()=>setPage("dashboard")}>Dashboard</button></li>
+            <li><button onClick={()=>setPage("analyze")}>Analyze</button></li>
+            <li><button onClick={()=>setPage("compare")}>Compare</button></li>
+            <li><button onClick={()=>setPage("history")}>History</button></li>
+            {user.role==="admin"&&<li><button onClick={()=>setPage("admin")}>Admin</button></li>}
+          </ul>
+          <div className="nav-user">
+            <div className="avatar">{user.name?.[0]?.toUpperCase()||"U"}</div>
+            <button className="btn btn-ghost btn-sm" onClick={onLogout}>Logout</button>
+          </div>
+        </>
+      ):(
+        <ul className="nav-links">
+          <li><a href="#features">Features</a></li>
+          <li><a href="#how-it-works">How It Works</a></li>
+          <li><button className="btn btn-yellow btn-sm" onClick={()=>setPage("login")}>Get Started</button></li>
+        </ul>
+      )}
+    </nav>
+  );
+}
+
+/* ── Landing Page ────────────────────────────────────────────────────────── */
+const Landing = ({ setPage }) => {
+
+// 1. ADD COMPONENT DEFINITION HERE
+function ProductShowcase() {
+  const platforms = [
+    {name: "Amazon", icon: "🛍️", color: "#FF9900", url: "https://amazon.in"},
+    {name: "Flipkart", icon: "🛒", color: "#2874f0", url: "https://flipkart.com"},
+    {name: "Myntra", icon: "👗", color: "#ff3f6c", url: "https://myntra.com"},
+    {name: "Snapdeal", icon: "🏪", color: "#e40046", url: "https://snapdeal.com"},
+    {name: "Meesho", icon: "💼", color: "#6B1E5D", url: "https://meesho.com"},
+    {name: "Ajio", icon: "👔", color: "#CD0067", url: "https://ajio.com"},
+  ];
+
+  return (
+    <section style={{padding:"4rem 2rem",background:"rgba(15,23,42,0.5)"}}>
+      <div className="section-inner">
+        <div className="section-tag fade-up">Supported Platforms</div>
+        <h2 className="section-title text-center fade-up">Analyze Products from Top E-Commerce Sites</h2>
+        <p className="section-sub center fade-up" style={{marginBottom:"2.5rem"}}>
+          SafeBasket works seamlessly across all major shopping platforms in India
+        </p>
+        
+        <div className="cards-grid cards-4 fade-up" style={{animationDelay:"0.2s"}}>
+          {platforms.map((p,i)=>(
+            <div key={i} className="glass platform-card" style={{
+              padding:"1.8rem",
+              textAlign:"center",
+              borderColor:`${p.color}30`
+            }}
+            onMouseEnter={e=>{
+              e.currentTarget.style.transform="translateY(-8px)";
+              e.currentTarget.style.boxShadow=`0 10px 30px ${p.color}30`;
+            }}
+            onMouseLeave={e=>{
+              e.currentTarget.style.transform="translateY(0)";
+              e.currentTarget.style.boxShadow="";
+            }}>
+              <div className="platform-icon-wrapper" style={{
+                background:`linear-gradient(135deg, ${p.color}20, ${p.color}10)`,
+                color:p.color
+              }}>
+                <div style={{fontSize:"3rem"}}>{p.icon}</div>
+              </div>
+              <h3 style={{fontSize:"1.1rem",marginBottom:"0.5rem",color:"var(--text)"}}>{p.name}</h3>
+              <div style={{width:"100%",height:"4px",background:p.color,borderRadius:"2px",marginTop:"1rem"}}/>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+  );
+}
+
+return (
+  <div className="landing-container">
+    {/* Hero */}
+    <section className="hero">
+      <div className="hero-bg">
+        <div className="orb orb1"/>
+        <div className="orb orb2"/>
+        
+        {/* Floating Shopping Icons */}
+        <div className="shopping-icons-float">
+          <div className="float-icon" style={{left:"10%",top:"20%",animationDelay:"0s"}}>🛍️</div>
+          <div className="float-icon" style={{right:"15%",top:"15%",animationDelay:"0.5s"}}>📦</div>
+          <div className="float-icon" style={{left:"20%",bottom:"20%",animationDelay:"1s"}}>🛒</div>
+          <div className="float-icon" style={{right:"10%",bottom:"25%",animationDelay:"1.5s"}}>💳</div>
+          <div className="float-icon" style={{left:"50%",top:"10%",animationDelay:"2s"}}>⭐</div>
+        </div>
+      </div>
+      <div className="hero-grid">
+        <div className="fade-up">
+          <div className="hero-badge">AI-Powered Shopping</div>
+          <h1 className="hero-title">Make<span className="accent">Strategic Decisions</span>,<br/><span className="dim">Not Guesses.</span></h1>
+          <p className="hero-sub">  SafeBasket uses advanced game theory and Nash Equilibrium analysis to give you 
+            optimal purchase strategies based on rigorous mathematical models.</p>
+          <div className="hero-actions">
+            <button className="btn btn-yellow btn-lg" onClick={()=>setPage("register")}>Get Started Free</button>
+            <a href="#features" className="btn btn-outline btn-lg">How it Works</a>
+          </div>
+        </div>
+        <div className="mock-wrap fade-in" style={{animationDelay:"0.3s"}}>
+          <div className="mock-pill mp1"><span className="dot" style={{background:"#22c55e"}}/> Trust Score: 84/100</div>
+          <div className="mock-card">
+            <p style={{fontSize:"0.82rem",color:"var(--text2)",textAlign:"center",marginBottom:"0.8rem"}}>boAt Airdopes 141 v2</p>
+            <div className="mock-ring-wrap">
+              <svg width="130" height="130" viewBox="0 0 130 130">
+                <circle cx="65" cy="65" r="55" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="10"/>
+                <circle cx="65" cy="65" r="55" fill="none" stroke="#22c55e" strokeWidth="10" strokeDasharray="345" strokeDashoffset="55" strokeLinecap="round"/>
+              </svg>
+              <div style={{textAlign:"center",zIndex:1}}>
+                <div className="mock-score">84</div>
+                <div className="mock-label">Trust Score</div>
+              </div>
+            </div>
+            {[["Positive","#22c55e",68],["Neutral","#f59e0b",21],["Negative","#ef4444",11]].map(([l,c,w])=>(
+              <div key={l} style={{display:"flex",alignItems:"center",gap:"9px",marginBottom:"8px"}}>
+                <span style={{fontSize:"0.74rem",color:c,width:"58px"}}>{l}</span>
+                <div style={{flex:1,height:4,background:"rgba(255,255,255,0.05)",borderRadius:2,overflow:"hidden"}}>
+                  <div style={{width:`${w}%`,height:"100%",background:c}}/>
+                </div>
+                <span style={{fontSize:"0.74rem",color:"var(--text3)",width:"24px",textAlign:"right"}}>{w}%</span>
+              </div>
+            ))}
+          </div>
+          <div className="mock-pill mp2"><span className="dot" style={{background:"var(--accent)"}}/> Price Trend: Stable</div>
+        </div>
+      </div>
+    </section>
+
+    {/* Features */}
+    <section id="features" style={{background:"var(--bg2)"}}>
+      <div className="section-inner">
+        <div className="text-center">
+          <div className="section-tag fade-up">Features</div>
+          <h2 className="section-title fade-up">Powerful Analysis at Your Fingertips</h2>
+          <p className="section-sub center fade-up">Our advanced AI engine deep-dives into every product detail to give you the real story behind the marketing.</p>
+        </div>
+        <div className="features-grid">
+          {[
+            {i:"🔍",t:"AI Review Analysis",d:"We filter out suspicious patterns and incentivized reviews to find genuine customer feedback."},
+            {i:"⚖️",t:"Product Comparison",d:"Compare two products side-by-side to see which one truly offers the best value for your money."},
+            {i:"📉",t:"Price Tracking",d:"Historical price data helps you identify if a 'sale' is actually a good deal or just a marketing trick."},
+            {i:"🛡️",t:"Seller Credibility",d:"We verify seller history and return policy satisfaction to ensure you buy from trusted sources."},
+            {i:"🎮",t:"Game Theory Analysis",d:"Nash Equilibrium solver identifies optimal strategies and calculates expected payoffs for rational decision-making."}
+          ].map((f,idx)=>(
+            <div key={idx} className="feature-card fade-up" style={{animationDelay:`${0.1 * idx}s`}}>
+              <div className="fi">{f.i}</div>
+              <div className="ft">{f.t}</div>
+              <div className="fd">{f.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* 2. ADD COMPONENT TAG HERE */}
+    <ProductShowcase />
+
+    {/* Statistics Section */}
+    <section style={{padding:"3rem 2rem",background:"linear-gradient(135deg, #667eea15, #764ba215)"}}>
+      <div className="section-inner">
+        <div className="stats-grid">
+          <div className="stat-item fade-up">
+            <div style={{
+              fontSize:"2.5rem",
+              fontWeight:"800",
+              background:"linear-gradient(135deg, var(--accent), var(--accent-d))",
+              WebkitBackgroundClip:"text",
+              WebkitTextFillColor:"transparent",
+              backgroundClip:"text",
+              marginBottom:"0.5rem"
+            }}>
+              99.2%
+            </div>
+            <div style={{color:"var(--text2)",fontSize:"0.95rem"}}>Detection Accuracy</div>
+          </div>
+          
+          <div className="stat-item fade-up" style={{animationDelay:"0.1s"}}>
+            <div style={{
+              fontSize:"2.5rem",
+              fontWeight:"800",
+              background:"linear-gradient(135deg, var(--accent), var(--accent-d))",
+              WebkitBackgroundClip:"text",
+              WebkitTextFillColor:"transparent",
+              backgroundClip:"text",
+              marginBottom:"0.5rem"
+            }}>
+              10M+
+            </div>
+            <div style={{color:"var(--text2)",fontSize:"0.95rem"}}>Reviews Analyzed</div>
+          </div>
+          
+          <div className="stat-item fade-up" style={{animationDelay:"0.2s"}}>
+            <div style={{
+              fontSize:"2.5rem",
+              fontWeight:"800",
+              background:"linear-gradient(135deg, var(--accent), var(--accent-d))",
+              WebkitBackgroundClip:"text",
+              WebkitTextFillColor:"transparent",
+              backgroundClip:"text",
+              marginBottom:"0.5rem"
+            }}>
+              6
+            </div>
+            <div style={{color:"var(--text2)",fontSize:"0.95rem"}}>Platforms Supported</div>
+          </div>
+          
+          <div className="stat-item fade-up" style={{animationDelay:"0.3s"}}>
+            <div style={{
+              fontSize:"2.5rem",
+              fontWeight:"800",
+              background:"linear-gradient(135deg, var(--accent), var(--accent-d))",
+              WebkitBackgroundClip:"text",
+              WebkitTextFillColor:"transparent",
+              backgroundClip:"text",
+              marginBottom:"0.5rem"
+            }}>
+              AI+GT
+            </div>
+            <div style={{color:"var(--text2)",fontSize:"0.95rem"}}>Powered Analysis</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    {/* Trust Indicators */}
+    <section style={{padding:"3rem 2rem"}}>
+      <div className="section-inner">
+        <h3 style={{
+          textAlign:"center",
+          fontSize:"1.8rem",
+          marginBottom:"2rem",
+          color:"var(--text)"
+        }}>
+          Why Users Trust SafeBasket
+        </h3>
+        <div style={{
+          display:"grid",
+          gridTemplateColumns:"repeat(auto-fit, minmax(250px, 1fr))",
+          gap:"1.5rem"
+        }}>
+          {[
+            {icon:"🔒",title:"Secure & Private",desc:"Your data is encrypted and never shared"},
+            {icon:"⚡",title:"Lightning Fast",desc:"Results in under 5 seconds"},
+            {icon:"🎯",title:"99.2% Accurate",desc:"AI-powered detection you can trust"},
+            {icon:"💡",title:"Free to Use",desc:"No hidden fees or premium tiers"}
+          ].map((item,i)=>(
+            <div key={i} className="fade-up" style={{
+              animationDelay:`${i*0.1}s`,
+              background:"rgba(255,255,255,0.02)",
+              padding:"1.5rem",
+              borderRadius:"var(--radius)",
+              border:"1px solid var(--border)",
+              textAlign:"center",
+              transition:"all 0.3s ease"
+            }}
+            onMouseEnter={e=>e.currentTarget.style.transform="translateY(-5px)"}
+            onMouseLeave={e=>e.currentTarget.style.transform="translateY(0)"}>
+              <div style={{fontSize:"2.5rem",marginBottom:"1rem"}}>{item.icon}</div>
+              <h4 style={{fontSize:"1.1rem",marginBottom:"0.5rem",color:"var(--text)"}}>
+                {item.title}
+              </h4>
+              <p style={{color:"var(--text2)",fontSize:"0.9rem",lineHeight:"1.6"}}>{item.desc}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    {/* How it works */}
+    <section id="how-it-works">
+      <div className="section-inner">
+        <div className="text-center">
+          <div className="section-tag fade-up">Workflow</div>
+          <h2 className="section-title fade-up">Get Results in Seconds</h2>
+        </div>
+        <div className="steps-row">
+          {[
+            {n:"1",t:"Paste URL",d:"Copy the product link from Amazon, Flipkart or any supported site."},
+            {n:"2",t:"AI Analysis",d:"Our engine scans reviews, price history, and seller data instantly."},
+            {n:"3",t:"Shop Safely",d:"Get a clear trust score and verdict to make your final decision."}
+          ].map((s,idx)=>(
+            <div key={idx} className="step-card fade-up" style={{animationDelay:`${0.2 * idx}s`}}>
+              <div className="step-num-wrap">
+                <div className="step-num">{s.n}</div>
+                <div className="step-pulse"/>
+              </div>
+              <div className="step-title">{s.t}</div>
+              <div className="step-desc">{s.d}</div>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+
+    <div className="divider"/>
+
+    <section className="text-center">
+      <div className="section-inner">
+        <h2 className="section-title fade-up">Ready to Shop Smarter?</h2>
+        <p className="section-sub center fade-up" style={{marginBottom:"2rem"}}>Join thousands of users who avoid shopping traps with SafeBasket AI.</p>
+        <button className="btn btn-yellow btn-lg fade-up" onClick={()=>setPage("register")}>Create Your Account</button>
+      </div>
+    </section>
+
+    <footer>
+      <div className="footer-logo">🛡️ Safe<span>Basket</span></div>
+      <p className="footer-credit">© 2024 SafeBasket AI Product Trust Analyzer.<br/>Making e-commerce transparent for everyone.</p>
+    </footer>
+  </div>
+);
+};
+
+/* ── Auth Pages ─────────────────────────────────────────────────────── */
+function AuthPage({mode,setPage,onLogin,addToast}){
+  const [name,setName]=useState("");
+  const [email,setEmail]=useState("");
+  const [pwd,setPwd]=useState("");
+  const [loading,setLoading]=useState(false);
+  const isLogin=mode==="login";
+
+  const handleSubmit=async()=>{
+    if(!email||!pwd){addToast("Please fill all fields.","error");return;}
+    if(!isLogin&&!name){addToast("Name is required.","error");return;}
+    setLoading(true);
+    try{
+      const endpoint=isLogin?"/login":"/register";
+      const body=isLogin?{email,password:pwd}:{name,email,password:pwd};
+      const {ok,data,message}=await apiFetch(endpoint,{method:"POST",body:JSON.stringify(body)});
+      if(!ok){addToast(message||"Authentication failed.","error");return;}
+      localStorage.setItem("sb_token",data.token);
+      onLogin(data.user);
+      addToast(`Welcome${isLogin?"back":""}, ${data.user.name}!`,"success");
+    }catch(e){addToast("Could not reach server. Make sure Flask is running.","error");}
+    finally{setLoading(false);}
+  };
+
+  return(
+    <div className="auth-page" style={{background:"var(--bg)"}}>
+      <div className="orb orb1"/><div className="orb orb2"/>
+      <div className="glass auth-card fade-up">
+        <div style={{textAlign:"center",marginBottom:"1.8rem"}}>
+          <div className="logo" style={{justifyContent:"center",marginBottom:"1.2rem"}}>
+            <div className="logo-icon">🛡️</div>
+            Safe<span style={{color:"var(--accent)"}}>Basket</span>
+          </div>
+          <div className="auth-title">{isLogin?"Welcome back":"Create account"}</div>
+          <div className="auth-sub">{isLogin?"Sign in to your account":"Start analysing products for free"}</div>
+        </div>
+        {!isLogin&&(
+          <div className="field">
+            <label className="field-label">Full Name</label>
+            <input className="input" placeholder="Your name" value={name} onChange={e=>setName(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()}/>
+          </div>
+        )}
+        <div className="field">
+          <label className="field-label">Email</label>
+          <input className="input" type="email" placeholder="you@email.com" value={email} onChange={e=>setEmail(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()}/>
+        </div>
+        <div className="field">
+          <label className="field-label">Password</label>
+          <input className="input" type="password" placeholder="••••••••" value={pwd} onChange={e=>setPwd(e.target.value)} onKeyDown={e=>e.key==="Enter"&&handleSubmit()}/>
+        </div>
+        <button className="btn btn-yellow" style={{width:"100%",justifyContent:"center",marginTop:"0.5rem"}} onClick={handleSubmit} disabled={loading}>
+          {loading?<><span className="spinner-ring" style={{width:17,height:17,border:"2px solid rgba(0,0,0,0.2)",borderTopColor:"var(--bg)"}}/> Please wait…</>:(isLogin?"Sign In →":"Create Account →")}
+        </button>
+        <div className="auth-divider">{isLogin?"New here?":"Already have an account?"}</div>
+        <button className="btn btn-outline" style={{width:"100%",justifyContent:"center"}} onClick={()=>setPage(isLogin?"register":"login")}>
+          {isLogin?"Create an account":"Sign in instead"}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+/* ── Dashboard ──────────────────────────────────────────────────────── */
+function Dashboard({user,setPage,addToast}){
+  const [data,setData]=useState(null);
+  const [loading,setLoading]=useState(true);
+
+  useEffect(()=>{
+    apiFetch("/dashboard").then(({ok,data:d,message})=>{
+      if(ok)setData(d);
+      else addToast(message||"Failed to load dashboard.","error");
+      setLoading(false);
+    }).catch(()=>{addToast("Server unreachable.","error");setLoading(false);});
+  },[]);
+
+  if(loading)return<div className="page"><div className="loading-center"><div className="spinner-ring"/><div className="loading-text">Loading dashboard…</div></div></div>;
+  if(!data)return null;
+
+  const statCards=[
+    {icon:"🔍",value:data.total_analyses,label:"Total Analyses",color:"var(--accent)"},
+    {icon:"📊",value:`${data.avg_trust_score}/100`,label:"Avg Trust Score",color:scoreColor(data.avg_trust_score)},
+    {icon:"✅",value:data.safe_count,label:"Safe Products",color:"var(--green)"},
+    {icon:"🚫",value:data.high_risk_count,label:"High Risk",color:"var(--red)"},
+    {icon:"🤖",value:`${data.avg_fake_risk}%`,label:"Avg Fake Risk",color:"var(--yellow)"},
+    {icon:"🛒",value:data.purchase_count,label:"Purchases Tracked",color:"var(--primary-ll)"},
+  ];
+
+  return(
+    <div className="page">
+      <div className="page-inner">
+        <div className="page-header">
+          <h1 className="page-title">Welcome back, {data.user.name} 👋</h1>
+          <p className="page-sub">Here's your product trust overview.</p>
+        </div>
+
+        <div className="cards-grid cards-3" style={{marginBottom:"1.5rem"}}>
+          {statCards.map((s,i)=>(
+            <div key={i} className="stat-card fade-up" style={{animationDelay:`${i*0.07}s`}}>
+              <div className="sc-icon">{s.icon}</div>
+              <div className="sc-value" style={{color:s.color}}>{s.value}</div>
+              <div className="sc-label">{s.label}</div>
+            </div>
+          ))}
+        </div>
+
+        {data.risk_trend?.length>1&&(
+          <div className="chart-card" style={{marginBottom:"1.5rem"}}>
+            <div className="chart-title">Trust Score Trend (Last {data.risk_trend.length} Analyses)</div>
+            <div style={{height:200,display:"flex",alignItems:"flex-end",gap:"6px",padding:"0.5rem 0"}}>
+              {data.risk_trend.map((d,i)=>(
+                <div key={i} style={{flex:1,display:"flex",flexDirection:"column",alignItems:"center",gap:"4px"}}>
+                  <span style={{fontSize:"0.65rem",color:"var(--text3)"}}>{Math.round(d.score)}</span>
+                  <div style={{width:"100%",background:scoreColor(d.score),borderRadius:"4px 4px 0 0",height:`${(d.score/100)*150}px`,transition:"height 0.8s ease",minHeight:"4px"}}/>
+                  <span style={{fontSize:"0.6rem",color:"var(--text3)",whiteSpace:"nowrap",overflow:"hidden",textOverflow:"ellipsis",maxWidth:"100%",textAlign:"center"}}>{d.date}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {data.recent_analyses?.length>0&&(
+          <div>
+            <div style={{display:"flex",justifyContent:"space-between",alignItems:"center",marginBottom:"1rem"}}>
+              <h3 style={{fontSize:"1rem",fontWeight:600}}>Recent Analyses</h3>
+              <button className="btn btn-ghost btn-sm" onClick={()=>setPage("history")}>View all →</button>
+            </div>
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>Product</th><th>Trust Score</th><th>Fake Risk</th><th>Date</th></tr></thead>
+                <tbody>
+                  {data.recent_analyses.map(a=>(
+                    <tr key={a.id}>
+                      <td className="url-cell"><a href={a.product_url} target="_blank" rel="noopener noreferrer" style={{color:"var(--text2)",textDecoration:"none"}}>{a.product_name||a.product_url}</a></td>
+                      <td><span className={`score-pill ${scoreClass(a.trust_score)}`}>{a.trust_score}/100</span></td>
+                      <td><span style={{fontSize:"0.82rem",color:scoreColor(100-a.fake_review_risk)}}>{a.fake_risk_label}</span></td>
+                      <td style={{color:"var(--text3)",fontSize:"0.8rem"}}>{new Date(a.analyzed_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {data.total_analyses===0&&(
+          <div className="empty-state glass" style={{marginTop:"1rem"}}>
+            <div className="em">🔍</div>
+            <p>No analyses yet.</p>
+            <button className="btn btn-yellow btn-sm" style={{marginTop:"1rem"}} onClick={()=>setPage("analyze")}>Analyze Your First Product</button>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+/* ── Price Comparison Modal Component ────────────────────────────────────── */
+function PriceComparisonModal({analysisId, onClose}) {
+  const [sellers, setSellers] = useState(null);
+  const [statistics, setStatistics] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  useEffect(() => {
+    apiFetch(`/price-comparison/${analysisId}`)
+      .then(({ok, data, message}) => {
+        if (ok) {
+          setSellers(data.sellers || []);
+          setStatistics(data.statistics);
+        } else {
+          setError(message || "Failed to load prices");
+        }
+        setLoading(false);
+      })
+      .catch(err => {
+        setError("Could not connect to server");
+        setLoading(false);
+      });
+  }, [analysisId]);
+
+  // Helper to get platform icon
+  const getPlatformIcon = (platform) => {
+    const icons = {
+      "Amazon": "📦",
+      "Flipkart": "🛒",
+      "Myntra": "👕",
+      "Snapdeal": "🏪",
+      "Paytm Mall": "💳",
+      "Tata CLiQ": "🏬",
+      "JioMart": "🛍️",
+      "Croma": "📱",
+      "Other": "🌐"
+    };
+    return icons[platform] || "🛒";
+  };
+
+  // Helper to format currency
+  const formatPrice = (price, currency) => {
+    const symbol = currency === "INR" || currency === "₹" ? "₹" : currency;
+    return `${symbol}${price.toLocaleString('en-IN', {maximumFractionDigits: 2})}`;
+  };
+
+  return (
+    <div 
+      style={{
+        position:"fixed", 
+        inset:0, 
+        background:"rgba(0,0,0,0.85)", 
+        display:"flex", 
+        alignItems:"center", 
+        justifyContent:"center", 
+        zIndex:10000,
+        backdropFilter:"blur(4px)"
+      }} 
+      onClick={onClose}
+    >
+      <div 
+        className="glass" 
+        style={{
+          width:"90%", 
+          maxWidth:"900px", 
+          padding:"2rem", 
+          maxHeight:"85vh", 
+          overflow:"auto"
+        }} 
+        onClick={e=>e.stopPropagation()}
+      >
+        {/* Header */}
+        <div style={{display:"flex", justifyContent:"space-between", alignItems:"center", marginBottom:"1.5rem"}}>
+          <div>
+            <h2 style={{fontSize:"1.5rem", marginBottom:"0.3rem"}}>💰 Price Comparison</h2>
+            {sellers && sellers.length > 0 && (
+              <p style={{color:"var(--text2)", fontSize:"0.85rem"}}>
+                Compare prices from {statistics?.platforms_count || sellers.length} platforms
+              </p>
+            )}
+          </div>
+          <button className="btn btn-ghost" onClick={onClose} style={{fontSize:"1.3rem"}}>✕</button>
+        </div>
+
+        {/* Loading State */}
+        {loading && (
+          <div style={{textAlign:"center", padding:"3rem"}}>
+            <div className="spinner-ring" style={{margin:"0 auto 1rem"}}/>
+            <p style={{color:"var(--text2)"}}>Searching for best prices across platforms...</p>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !loading && (
+          <div style={{
+            textAlign:"center", 
+            padding:"2rem", 
+            background:"var(--red-bg)", 
+            borderRadius:"var(--radius)",
+            border:"1px solid rgba(239,68,68,0.3)"
+          }}>
+            <div style={{fontSize:"2rem", marginBottom:"0.5rem"}}>⚠️</div>
+            <p style={{color:"var(--red)", fontWeight:600}}>{error}</p>
+          </div>
+        )}
+
+        {/* Price Statistics */}
+        {statistics && !loading && sellers.length > 0 && (
+          <div style={{
+            display:"grid", 
+            gridTemplateColumns:"repeat(auto-fit, minmax(140px, 1fr))", 
+            gap:"1rem", 
+            marginBottom:"1.5rem",
+            padding:"1.2rem",
+            background:"rgba(250,204,21,0.08)",
+            borderRadius:"var(--radius)",
+            border:"1px solid rgba(250,204,21,0.2)"
+          }}>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:"0.7rem", color:"var(--text3)", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:"0.3rem"}}>Best Price</div>
+              <div style={{fontSize:"1.3rem", fontWeight:700, color:"var(--green)"}}>
+                {formatPrice(statistics.lowest_price, sellers[0].currency)}
+              </div>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:"0.7rem", color:"var(--text3)", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:"0.3rem"}}>Highest Price</div>
+              <div style={{fontSize:"1.3rem", fontWeight:700, color:"var(--red)"}}>
+                {formatPrice(statistics.highest_price, sellers[0].currency)}
+              </div>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:"0.7rem", color:"var(--text3)", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:"0.3rem"}}>You Save</div>
+              <div style={{fontSize:"1.3rem", fontWeight:700, color:"var(--accent)"}}>
+                {formatPrice(statistics.savings_vs_highest, sellers[0].currency)}
+              </div>
+            </div>
+            <div style={{textAlign:"center"}}>
+              <div style={{fontSize:"0.7rem", color:"var(--text3)", textTransform:"uppercase", letterSpacing:"0.05em", marginBottom:"0.3rem"}}>Avg Price</div>
+              <div style={{fontSize:"1.3rem", fontWeight:700, color:"var(--text2)"}}>
+                {formatPrice(statistics.average_price, sellers[0].currency)}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Sellers List */}
+        {sellers && !loading && sellers.length > 0 && (
+          <div style={{display:"grid", gap:"0.8rem"}}>
+            {sellers.map((seller, i) => (
+              <div 
+                key={i} 
+                className="glass" 
+                style={{
+                  padding:"1.2rem", 
+                  display:"flex", 
+                  justifyContent:"space-between", 
+                  alignItems:"center",
+                  gap:"1.5rem",
+                  transition:"all 0.2s",
+                  border: i === 0 ? "2px solid var(--green)" : "1px solid var(--border)",
+                  position:"relative"
+                }}
+                onMouseEnter={e => e.currentTarget.style.transform = "translateX(4px)"}
+                onMouseLeave={e => e.currentTarget.style.transform = "translateX(0)"}
+              >
+                {/* Best Deal Badge */}
+                {i === 0 && (
+                  <div style={{
+                    position:"absolute",
+                    top:"-10px",
+                    left:"10px",
+                    background:"var(--green)",
+                    color:"var(--bg)",
+                    padding:"2px 10px",
+                    borderRadius:"100px",
+                    fontSize:"0.65rem",
+                    fontWeight:700,
+                    textTransform:"uppercase",
+                    letterSpacing:"0.05em"
+                  }}>
+                    🏆 Best Deal
+                  </div>
+                )}
+
+                {/* Seller Info */}
+                <div style={{flex:1}}>
+                  <div style={{display:"flex", alignItems:"center", gap:"0.5rem", marginBottom:"0.5rem"}}>
+                    <span style={{fontSize:"1.3rem"}}>{getPlatformIcon(seller.platform)}</span>
+                    <div>
+                      <div style={{fontWeight:600, fontSize:"1rem"}}>{seller.seller_name}</div>
+                      <div style={{fontSize:"0.72rem", color:"var(--text3)", textTransform:"uppercase", letterSpacing:"0.05em"}}>
+                        {seller.platform}
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Rating & Reviews */}
+                  {seller.rating && (
+                    <div style={{fontSize:"0.8rem", color:"var(--text2)", marginBottom:"0.3rem"}}>
+                      ⭐ {seller.rating}/5 {seller.reviews_count && `(${seller.reviews_count} reviews)`}
+                    </div>
+                  )}
+                  
+                  {/* Shipping Info */}
+                  <div style={{fontSize:"0.75rem", color:"var(--text3)"}}>
+                    {seller.shipping === "Free" ? (
+                      <span style={{color:"var(--green)", fontWeight:600}}>🚚 Free Shipping</span>
+                    ) : (
+                      <span>🚚 {seller.shipping}</span>
+                    )}
+                    {seller.delivery_time && ` • Delivery: ${seller.delivery_time}`}
+                  </div>
+                  
+                  {/* Stock Status */}
+                  <div style={{fontSize:"0.75rem", marginTop:"0.3rem"}}>
+                    {seller.in_stock ? (
+                      <span style={{color:"var(--green)"}}>✓ In Stock</span>
+                    ) : (
+                      <span style={{color:"var(--red)"}}>✗ Out of Stock</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Price & Action */}
+                <div style={{textAlign:"right", display:"flex", flexDirection:"column", gap:"0.8rem"}}>
+                  <div>
+                    <div style={{
+                      fontSize: i === 0 ? "1.8rem" : "1.5rem", 
+                      fontWeight:700, 
+                      color: i === 0 ? "var(--green)" : "var(--accent)",
+                      lineHeight:1
+                    }}>
+                      {formatPrice(seller.price, seller.currency)}
+                    </div>
+                    {i > 0 && statistics && (
+                      <div style={{fontSize:"0.7rem", color:"var(--red)", marginTop:"0.2rem"}}>
+                        +{formatPrice(seller.price - statistics.lowest_price, seller.currency)} more
+                      </div>
+                    )}
+                  </div>
+                  
+                  <a 
+                    href={seller.link} 
+                    target="_blank" 
+                    rel="noopener noreferrer" 
+                    className="btn btn-yellow btn-sm" 
+                    style={{
+                      fontSize:"0.75rem", 
+                      padding:"0.5rem 1rem",
+                      whiteSpace:"nowrap"
+                    }}
+                  >
+                    View Deal →
+                  </a>
+                </div>
+              </div>
+            ))}
+          </div>
+        )}
+
+        {/* No Results */}
+        {sellers && !loading && sellers.length === 0 && (
+          <div style={{
+            textAlign:"center", 
+            padding:"3rem",
+            background:"rgba(255,255,255,0.03)",
+            borderRadius:"var(--radius)"
+          }}>
+            <div style={{fontSize:"3rem", marginBottom:"1rem"}}>🔍</div>
+            <h3 style={{fontSize:"1.1rem", marginBottom:"0.5rem"}}>No Price Listings Found</h3>
+            <p style={{color:"var(--text2)", fontSize:"0.9rem", maxWidth:"400px", margin:"0 auto"}}>
+              This product may not be available across multiple platforms, or our search didn't return any results. 
+              Try checking the original platform directly.
+            </p>
+          </div>
+        )}
+
+        {/* Footer Note */}
+        {sellers && sellers.length > 0 && (
+          <div style={{
+            marginTop:"1.5rem", 
+            padding:"1rem", 
+            background:"rgba(255,255,255,0.02)", 
+            borderRadius:"var(--radius)",
+            fontSize:"0.75rem",
+            color:"var(--text3)",
+            textAlign:"center"
+          }}>
+            💡 Prices are fetched in real-time from multiple e-commerce platforms. 
+            Click "View Deal" to check the latest price and availability on the seller's website.
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Analyze Page ───────────────────────────────────────────────────── */
+/* ── ENHANCED Analyze Page ───────────────────────────────────────────────── */
+/* ── ENHANCED Analyze Page ───────────────────────────────────────────────── */
+/* ── Analyze Page ────────────────────────────────────────────────────────── */
+function AnalyzePage({addToast}){
+  const [url,setUrl]=useState("");
+  const [loading,setLoading]=useState(false);
+  const [result,setResult]=useState(null);
+  const [showComparison, setShowComparison] = useState(false);
+
+  // NEW: Helper for the Compare Prices button
+  const fetchPriceComparison = async (id) => {
+    // Open the modal instead of showing a toast
+    setShowComparison(true);
+  };
+
+  const isValid=u=>{try{new URL(u);return true}catch{return false}};
+  
+  const handleAnalyze=async()=>{
+    if(!url.trim()){addToast("Please enter a product URL.","error");return;}
+    if(!isValid(url.trim())){addToast("Please enter a valid URL.","error");return;}
+    setLoading(true);setResult(null);
+    try{
+      const {ok,data,message}=await apiFetch("/analyze",{method:"POST",body:JSON.stringify({product_url:url.trim()})});
+      if(!ok){addToast(message||"Analysis failed.","error");return;}
+      console.log("✅ Analysis result received:", data);
+      setResult(data);
+      addToast("Analysis complete!","success");
+    }catch(e){
+      console.error("❌ Analysis error:", e);
+      addToast("Could not reach backend. Make sure Flask is running on port 5000.","error");
+    } finally{setLoading(false);}
+  };
+
+  const reco=result && result.trust_score.score !== undefined ? {cls:recoClass(result.trust_score.score),text:result.recommendation || "No recommendation available"} : null;
+
+  return(
+    <div className="page">
+      <div className="page-inner">
+        <div className="page-header">
+          <h1 className="page-title">Analyze Product</h1>
+          <p className="page-sub">Paste any product URL and get a full AI trust analysis.</p>
+        </div>
+
+        <div className="glass analyzer-card" style={{marginBottom:"1.5rem"}}>
+          <label className="field-label">Product URL</label>
+          <div className="url-row">
+            <input 
+              className="input" 
+              placeholder="https://www.amazon.in/dp/..." 
+              value={url} 
+              onChange={e=>setUrl(e.target.value)} 
+              onKeyDown={e=>e.key==="Enter"&&!loading&&handleAnalyze()}
+            />
+            <button className="btn btn-yellow" onClick={handleAnalyze} disabled={loading} style={{whiteSpace:"nowrap"}}>
+              {loading ? (
+                <><span className="spinner-ring" style={{width:16,height:16,border:"2px solid rgba(0,0,0,0.2)",borderTopColor:"var(--bg)"}}/> Analyzing…</>
+              ) : (
+                <>🔍 Analyze</>
+              )}
+            </button>
+          </div>
+        </div>
+
+        {result && !loading && (
+          <div className="results-wrap">
+            
+            {/* ── NEW: Product Card with Image ── */}
+            <div className="glass" style={{padding:"1.5rem",marginBottom:"1.5rem",display:"flex",gap:"1.5rem",alignItems:"center"}}>
+              {result.product_image && (
+                <img 
+                  src={result.product_image} 
+                  alt={result.product_name}  
+                  style={{width:"120px",height:"120px",objectFit:"contain",borderRadius:"12px",background:"white",padding:"8px"}}
+                />
+              )}
+              <div style={{flex:1}}>
+                <h2 style={{fontSize:"1.3rem",marginBottom:"0.5rem",color:"var(--text)"}}>{result.product_name}</h2>
+                {result.product_description && (
+                  <p style={{fontSize:"0.85rem",color:"var(--text2)",lineHeight:1.6,marginBottom:"0.8rem"}}>
+                    {result.product_description}
+                  </p>
+                )}
+                {result.product_price && (
+                  <div style={{fontSize:"1.3rem",fontWeight:700,color:"var(--accent)"}}>
+                    {result.product_currency}{result.product_price}
+                  </div>
+                )}
+                <button 
+                  className="btn btn-outline btn-sm" 
+                  onClick={()=>fetchPriceComparison(result.analysis_id)} 
+                  style={{marginTop:"0.8rem"}}
+                >
+                  💰 Compare Prices
+                </button>
+              </div>
+            </div>
+
+            {/* Recommendation Badge */}
+            <div className={`reco-badge ${reco.cls}`} style={{marginBottom:"1.2rem"}}>
+              {reco.cls==="reco-safe"?"✅":reco.cls==="reco-caution"?"⚠️":"❌"} {reco.text}
+            </div>
+
+            <div className="results-grid">
+              {/* Trust Score */}
+              <div className="result-panel">
+                <div className="rp-label">Trust Score</div>
+                <div className="trust-wrap">
+                  <div className="trust-ring">
+                    <div className="trust-glow" style={{background:scoreColor(result.trust_score.score)}}/>
+                    <svg width="150" height="150" viewBox="0 0 150 150">
+                      <circle cx="75" cy="75" r="65" fill="none" stroke="rgba(255,255,255,0.05)" strokeWidth="12"/>
+                      <circle cx="75" cy="75" r="65" fill="none" stroke={scoreColor(result.trust_score.score)} strokeWidth="12" strokeDasharray="408" strokeDashoffset={408 - (408 * result.trust_score.score / 100)} strokeLinecap="round"/>
+                    </svg>
+                    <div style={{textAlign:"center",zIndex:1}}>
+                      <div className="trust-num">{result.trust_score.score}</div>
+                      <div className="trust-sub">Score</div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Sentiment breakdown */}
+              {result.sentiment && (
+              <div className="result-panel">
+                <div className="rp-label">Sentiment Breakdown</div>
+                <div className="sent-bar-wrap">
+                  {[["Positive",result.sentiment.positive || 0,"var(--green)"],["Neutral",result.sentiment.neutral || 0,"var(--yellow)"],["Negative",result.sentiment.negative || 0,"var(--red)"]].map(([l,v,c])=>(
+                    <div key={l} className="sent-row">
+                      <div className="sent-meta"><span>{l}</span><span>{v}%</span></div>
+                      <div className="sent-track"><div className="sent-fill" style={{width:`${v}%`,background:c}}/></div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+              )}
+              {/* Risk Analysis Summary */}
+              {result.risks && result.risks.length > 0 && (
+              <div className="result-panel result-panel-full">
+                <div className="rp-label">Risk Analysis & Signals</div>
+                <div style={{display:"grid",gridTemplateColumns:"1.2fr 1fr",gap:"1.5rem"}}>
+                  <div>
+                    <div className="risk-grid" style={{marginBottom:"1.2rem"}}>
+                      {result.risks.map((r,i)=>(
+                        <div key={i} className={`risk-item ${r.level==="High"?"risk-high":r.level==="Medium"?"risk-med":"risk-low"}`}>
+                          <span>{r.level==="High"?"🚩":r.level==="Medium"?"⚠️":"✓"}</span> {r.factor}
+                        </div>
+                      ))}
+                    </div>
+                    {result.explanation && <div className="explanation">{result.explanation}</div>}
+                  </div>
+                  <div>
+                    <div className="fake-signals">
+                      {result.fake_probability !== undefined && <div className="signal-item"><span className="signal-label">Fake Review Probability</span><span className="signal-val" style={{color:result.fake_probability>40?"var(--red)":"var(--green)"}}>{result.fake_probability}%</span></div>}
+                      {result.verified_ratio !== undefined && <div className="signal-item"><span className="signal-label">Verified Purchases</span><span className="signal-val">{result.verified_ratio}%</span></div>}
+                      {result.seller_rating !== undefined && <div className="signal-item"><span className="signal-label">Seller Rating</span><span className="signal-val">{result.seller_rating}/5</span></div>}
+                      {result.return_satisfaction !== undefined && <div className="signal-item"><span className="signal-label">Return Satisfaction</span><span className="signal-val">{result.return_satisfaction}%</span></div>}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              )}
+            </div>
+            
+            {/* Integration of previous ENHANCED sections */}
+            <div style={{marginTop:"1.5rem", display:"grid", gap:"1.2rem", gridTemplateColumns:"1fr 1fr"}}>
+              {/* Detailed Grievances */}
+              <div className="result-panel">
+                 <div className="rp-label">⚠️ Key Consumer Grievances</div>
+                 {result.detailed_grievances && result.detailed_grievances.length > 0 ? (
+                    <div className="detailed-grievances">
+                       {result.detailed_grievances.map((g,idx)=>(
+                          <div key={idx} className={`grievance-card severity-${g.severity.toLowerCase()}`}>
+                             <div className="grievance-header">
+                                <span className={`severity-badge ${g.severity.toLowerCase()}`}>{g.severity}</span>
+                                <div className="grievance-title">{g.category}</div>
+                                <div className="grievance-mentions">{g.mentions} mentions</div>
+                             </div>
+                             {g.examples && g.examples[0] && <div className="grievance-example">"{g.examples[0]}"</div>}
+                             <div className="grievance-recommendation">{g.recommendation}</div>
+                          </div>
+                       ))}
+                    </div>
+                 ) : <p style={{fontSize:"0.85rem",color:"var(--text3)",textAlign:"center",padding:"1rem"}}>No major issues detected ✓</p>}
+              </div>
+
+              {/* Value Analysis */}
+              {result.value_analysis && (
+                <div className="result-panel value-analysis">
+                  <div className="rp-label">💰 Value for Money</div>
+                  <div className="value-score-big" style={{color:scoreColor(result.value_analysis.value_score)}}>{result.value_analysis.value_score}/100</div>
+                  <div className="value-verdict">{result.value_analysis.value_verdict}</div>
+                  <div className="value-stats">
+                      <div className="value-stat"><span>👍</span> <span>{result.value_analysis.positive_mentions}</span> <span style={{color:"var(--text3)",fontSize:"0.8rem"}}>positive</span></div>
+                      <div className="value-stat"><span>👎</span> <span>{result.value_analysis.negative_mentions}</span> <span style={{color:"var(--text3)",fontSize:"0.8rem"}}>negative</span></div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+        {/* ══════════════════════════════════════════════════════════════
+    GAME THEORY ANALYSIS DISPLAY (NEW!)
+    ══════════════════════════════════════════════════════════════ */}
+
+{result && result.game_theory_analysis && (
+  <div className="glass" style={{
+    padding: "2rem",
+    marginTop: "1.5rem",
+    marginBottom: "1.5rem",
+    border: "1px solid var(--border)",
+    borderRadius: "var(--radius-lg)",
+    background: "linear-gradient(135deg, var(--bg2) 0%, var(--bg3) 100%)"
+  }}>
+    
+    {/* Header */}
+    <div style={{marginBottom: "1.5rem"}}>
+      <h3 style={{
+        fontSize: "1.4rem",
+        fontWeight: "700",
+        color: "var(--accent)",
+        marginBottom: "0.5rem",
+        display: "flex",
+        alignItems: "center",
+        gap: "0.5rem"
+      }}>
+        <span>🎯</span>
+        <span>Purchase Decision Analysis</span>
+      </h3>
+      <p style={{fontSize: "0.9rem", color: "var(--text2)", lineHeight: 1.6}}>
+        Strategic assessment of whether this purchase makes sense based on available information
+      </p>
+    </div>
+
+    {/* Main Decision Card */}
+    <div style={{
+      background: "var(--glass)",
+      backdropFilter: "blur(10px)",
+      border: "2px solid var(--border)",
+      borderRadius: "var(--radius)",
+      padding: "1.5rem",
+      marginBottom: "1.5rem",
+      boxShadow: "var(--shadow)"
+    }}>
+      
+      {/* Decision */}
+      <div style={{marginBottom: "1.2rem"}}>
+        <div style={{fontSize: "0.8rem", color: "var(--text3)", fontWeight: "600", marginBottom: "0.5rem"}}>
+          OUR RECOMMENDATION
+        </div>
+        <div style={{
+          fontSize: "1.8rem",
+          fontWeight: "700",
+          color: result.game_theory_analysis.optimal_strategy?.buyer === "Buy" 
+            ? "var(--green)" 
+            : result.game_theory_analysis.optimal_strategy?.buyer === "Don't Buy"
+            ? "var(--red)"
+            : "var(--yellow)"
+        }}>
+          {result.game_theory_analysis.optimal_strategy?.buyer === "Buy" && "✅ Recommended to Buy"}
+          {result.game_theory_analysis.optimal_strategy?.buyer === "Don't Buy" && "🚫 Not Recommended"}
+          {result.game_theory_analysis.optimal_strategy?.buyer === "Maybe" && "⚠️ Consider Carefully"}
+          {!result.game_theory_analysis.optimal_strategy?.buyer && "⚠️ Review Carefully"}
+        </div>
+      </div>
+
+      {/* Confidence Bar */}
+      <div style={{marginBottom: "1rem"}}>
+        <div style={{display: "flex", justifyContent: "space-between", fontSize: "0.75rem", marginBottom: "0.4rem"}}>
+          <span style={{color: "var(--text2)"}}>Decision Confidence</span>
+          <span style={{color: "var(--accent)", fontWeight: "600"}}>{result.game_theory_analysis.confidence}%</span>
+        </div>
+        <div style={{
+          height: "8px",
+          background: "rgba(0,0,0,0.3)",
+          borderRadius: "100px",
+          overflow: "hidden"
+        }}>
+          <div style={{
+            height: "100%",
+            width: `${result.game_theory_analysis.confidence}%`,
+            background: `linear-gradient(90deg, var(--accent-d), var(--accent))`,
+            boxShadow: "0 0 10px var(--accent-glow)",
+            transition: "width 0.5s ease"
+          }}/>
+        </div>
+      </div>
+
+      {/* Reasoning */}
+      {result.game_theory_analysis.recommendation?.reasoning && (
+        <div style={{
+          marginTop: "1rem",
+          paddingTop: "1rem",
+          borderTop: "1px solid var(--border)"
+        }}>
+          <div style={{fontSize: "0.8rem", color: "var(--text3)", fontWeight: "600", marginBottom: "0.6rem"}}>
+            WHY?
+          </div>
+          {result.game_theory_analysis.recommendation.reasoning.map((reason, idx) => (
+            <div key={idx} style={{
+              fontSize: "0.85rem",
+              color: "var(--text)",
+              lineHeight: 1.6,
+              marginBottom: "0.4rem",
+              display: "flex",
+              gap: "0.5rem"
+            }}>
+              <span style={{color: "var(--accent)"}}>•</span>
+              <span>{reason}</span>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+
+    {/* Decision Factors Grid */}
+    <div style={{marginBottom: "1.5rem"}}>
+      <h4 style={{fontSize: "1rem", fontWeight: "600", color: "var(--text)", marginBottom: "1rem"}}>
+        Decision Factors
+      </h4>
+      
+      <div style={{
+        display: "grid",
+        gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
+        gap: "1rem"
+      }}>
+        
+        {/* Information Quality */}
+        {result.game_theory_analysis.decision_factors?.information_reliability !== undefined && (
+          <div style={{
+            background: "var(--glass)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            padding: "1rem"
+          }}>
+            <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.8rem"}}>
+              <div style={{fontSize: "0.85rem", color: "var(--text2)", fontWeight: "600"}}>
+                📊 Information Quality
+              </div>
+              <div style={{
+                fontSize: "1.3rem",
+                fontWeight: "700",
+                color: result.game_theory_analysis.decision_factors.information_reliability >= 70 
+                  ? "var(--green)" 
+                  : result.game_theory_analysis.decision_factors.information_reliability >= 40
+                  ? "var(--yellow)"
+                  : "var(--red)"
+              }}>
+                {result.game_theory_analysis.decision_factors.information_reliability.toFixed(0)}%
+              </div>
+            </div>
+            <div style={{
+              height: "4px",
+              background: "rgba(0,0,0,0.3)",
+              borderRadius: "100px",
+              overflow: "hidden"
+            }}>
+              <div style={{
+                height: "100%",
+                width: `${result.game_theory_analysis.decision_factors.information_reliability}%`,
+                background: result.game_theory_analysis.decision_factors.information_reliability >= 70 
+                  ? "var(--green)" 
+                  : result.game_theory_analysis.decision_factors.information_reliability >= 40
+                  ? "var(--yellow)"
+                  : "var(--red)"
+              }}/>
+            </div>
+          </div>
+        )}
+
+        {/* Value for Money */}
+        {result.game_theory_analysis.decision_factors?.value_proposition !== undefined && (
+          <div style={{
+            background: "var(--glass)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            padding: "1rem"
+          }}>
+            <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.8rem"}}>
+              <div style={{fontSize: "0.85rem", color: "var(--text2)", fontWeight: "600"}}>
+                💰 Value for Money
+              </div>
+              <div style={{
+                fontSize: "1.3rem",
+                fontWeight: "700",
+                color: result.game_theory_analysis.decision_factors.value_proposition >= 70 
+                  ? "var(--green)" 
+                  : result.game_theory_analysis.decision_factors.value_proposition >= 40
+                  ? "var(--yellow)"
+                  : "var(--red)"
+              }}>
+                {result.game_theory_analysis.decision_factors.value_proposition.toFixed(0)}%
+              </div>
+            </div>
+            <div style={{
+              height: "4px",
+              background: "rgba(0,0,0,0.3)",
+              borderRadius: "100px",
+              overflow: "hidden"
+            }}>
+              <div style={{
+                height: "100%",
+                width: `${result.game_theory_analysis.decision_factors.value_proposition}%`,
+                background: result.game_theory_analysis.decision_factors.value_proposition >= 70 
+                  ? "var(--green)" 
+                  : result.game_theory_analysis.decision_factors.value_proposition >= 40
+                  ? "var(--yellow)"
+                  : "var(--red)"
+              }}/>
+            </div>
+          </div>
+        )}
+
+        {/* Purchase Risk */}
+        {result.game_theory_analysis.decision_factors?.risk_level !== undefined && (
+          <div style={{
+            background: "var(--glass)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            padding: "1rem"
+          }}>
+            <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.8rem"}}>
+              <div style={{fontSize: "0.85rem", color: "var(--text2)", fontWeight: "600"}}>
+                ⚠️ Purchase Risk
+              </div>
+              <div style={{
+                fontSize: "1.3rem",
+                fontWeight: "700",
+                color: result.game_theory_analysis.decision_factors.risk_level < 30 
+                  ? "var(--green)" 
+                  : result.game_theory_analysis.decision_factors.risk_level < 60
+                  ? "var(--yellow)"
+                  : "var(--red)"
+              }}>
+                {result.game_theory_analysis.decision_factors.risk_level.toFixed(0)}%
+              </div>
+            </div>
+            <div style={{
+              height: "4px",
+              background: "rgba(0,0,0,0.3)",
+              borderRadius: "100px",
+              overflow: "hidden"
+            }}>
+              <div style={{
+                height: "100%",
+                width: `${result.game_theory_analysis.decision_factors.risk_level}%`,
+                background: result.game_theory_analysis.decision_factors.risk_level < 30 
+                  ? "var(--green)" 
+                  : result.game_theory_analysis.decision_factors.risk_level < 60
+                  ? "var(--yellow)"
+                  : "var(--red)"
+              }}/>
+            </div>
+          </div>
+        )}
+
+        {/* Market Confidence */}
+        {result.game_theory_analysis.decision_factors?.market_confidence !== undefined && (
+          <div style={{
+            background: "var(--glass)",
+            border: "1px solid var(--border)",
+            borderRadius: "var(--radius)",
+            padding: "1rem"
+          }}>
+            <div style={{display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "0.8rem"}}>
+              <div style={{fontSize: "0.85rem", color: "var(--text2)", fontWeight: "600"}}>
+                📈 Market Confidence
+              </div>
+              <div style={{
+                fontSize: "1.3rem",
+                fontWeight: "700",
+                color: result.game_theory_analysis.decision_factors.market_confidence >= 70 
+                  ? "var(--green)" 
+                  : result.game_theory_analysis.decision_factors.market_confidence >= 40
+                  ? "var(--yellow)"
+                  : "var(--red)"
+              }}>
+                {result.game_theory_analysis.decision_factors.market_confidence.toFixed(0)}%
+              </div>
+            </div>
+            <div style={{
+              height: "4px",
+              background: "rgba(0,0,0,0.3)",
+              borderRadius: "100px",
+              overflow: "hidden"
+            }}>
+              <div style={{
+                height: "100%",
+                width: `${result.game_theory_analysis.decision_factors.market_confidence}%`,
+                background: result.game_theory_analysis.decision_factors.market_confidence >= 70 
+                  ? "var(--green)" 
+                  : result.game_theory_analysis.decision_factors.market_confidence >= 40
+                  ? "var(--yellow)"
+                  : "var(--red)"
+              }}/>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+
+    {/* Risk Breakdown */}
+    {result.game_theory_analysis.risk_assessment && (
+      <div style={{marginBottom: "1.5rem"}}>
+        <h4 style={{fontSize: "1rem", fontWeight: "600", color: "var(--text)", marginBottom: "1rem"}}>
+          Risk Assessment
+        </h4>
+        
+        <div style={{
+          display: "grid",
+          gap: "0.8rem"
+        }}>
+          
+          {/* Information Risks */}
+          {result.game_theory_analysis.risk_assessment.information_risks && result.game_theory_analysis.risk_assessment.information_risks.length > 0 && (
+            <div style={{
+              background: "var(--glass)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius)",
+              padding: "1rem"
+            }}>
+              <div style={{fontSize: "0.85rem", color: "var(--accent)", fontWeight: "600", marginBottom: "0.6rem"}}>
+                Information Risks
+              </div>
+              {result.game_theory_analysis.risk_assessment.information_risks.map((risk, idx) => (
+                <div key={idx} style={{
+                  fontSize: "0.8rem",
+                  color: "var(--text2)",
+                  marginBottom: "0.3rem",
+                  display: "flex",
+                  gap: "0.5rem",
+                  alignItems: "flex-start"
+                }}>
+                  <span style={{color: "var(--yellow)", fontSize: "0.7rem"}}>▸</span>
+                  <span>{risk}</span>
+                </div>
+              ))}
+            </div>
+          )}
+
+          {/* Product Risks */}
+          {result.game_theory_analysis.risk_assessment.product_risks && result.game_theory_analysis.risk_assessment.product_risks.length > 0 && (
+            <div style={{
+              background: "var(--glass)",
+              border: "1px solid var(--border)",
+              borderRadius: "var(--radius)",
+              padding: "1rem"
+            }}>
+              <div style={{fontSize: "0.85rem", color: "var(--accent)", fontWeight: "600", marginBottom: "0.6rem"}}>
+                Product Risks
+              </div>
+              {result.game_theory_analysis.risk_assessment.product_risks.map((risk, idx) => (
+                <div key={idx} style={{
+                  fontSize: "0.8rem",
+                  color: "var(--text2)",
+                  marginBottom: "0.3rem",
+                  display: "flex",
+                  gap: "0.5rem",
+                  alignItems: "flex-start"
+                }}>
+                  <span style={{color: "var(--red)", fontSize: "0.7rem"}}>▸</span>
+                  <span>{risk}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    )}
+
+    {/* Opportunity Analysis */}
+    {result.game_theory_analysis.opportunity_analysis && (
+      <div style={{
+        background: "rgba(250, 204, 21, 0.05)",
+        border: "1px solid var(--accent-d)",
+        borderRadius: "var(--radius)",
+        padding: "1.2rem"
+      }}>
+        <div style={{fontSize: "0.9rem", fontWeight: "600", color: "var(--accent)", marginBottom: "1rem"}}>
+          💡 What You Should Know
+        </div>
+        
+        <div style={{marginBottom: "0.8rem"}}>
+          <div style={{fontSize: "0.75rem", color: "var(--text3)", fontWeight: "600", marginBottom: "0.3rem"}}>
+            POTENTIAL UPSIDE
+          </div>
+          <div style={{fontSize: "0.85rem", color: "var(--text)", lineHeight: 1.5}}>
+            {result.game_theory_analysis.opportunity_analysis.potential_upside}
+          </div>
+        </div>
+        
+        <div style={{marginBottom: "0.8rem"}}>
+          <div style={{fontSize: "0.75rem", color: "var(--text3)", fontWeight: "600", marginBottom: "0.3rem"}}>
+            POTENTIAL DOWNSIDE
+          </div>
+          <div style={{fontSize: "0.85rem", color: "var(--text)", lineHeight: 1.5}}>
+            {result.game_theory_analysis.opportunity_analysis.potential_downside}
+          </div>
+        </div>
+        
+        <div>
+          <div style={{fontSize: "0.75rem", color: "var(--text3)", fontWeight: "600", marginBottom: "0.3rem"}}>
+            OUR ADVICE
+          </div>
+          <div style={{fontSize: "0.85rem", color: "var(--text)", lineHeight: 1.5}}>
+            {result.game_theory_analysis.opportunity_analysis.alternatives_suggestion}
+          </div>
+        </div>
+      </div>
+    )}
+  </div>
+)}
+      </div>
+
+      {/* Conditionally render the modal at the end of the page */}
+      {showComparison && result && (
+        <PriceComparisonModal 
+          analysisId={result.analysis_id} 
+          onClose={() => setShowComparison(false)} 
+        />
+      )}
+    </div>
+  );
+}
+/* ── Compare Page ───────────────────────────────────────────────────── */
+function ComparePage({addToast}){
+  const [url1,setUrl1]=useState("");
+  const [url2,setUrl2]=useState("");
+  const [loading,setLoading]=useState(false);
+  const [result,setResult]=useState(null);
+
+  const handleCompare=async()=>{
+    if(!url1.trim()||!url2.trim()){addToast("Please enter both product URLs.","error");return;}
+    setLoading(true);setResult(null);
+    try{
+      const {ok,data,message}=await apiFetch("/compare",{method:"POST",body:JSON.stringify({url1:url1.trim(),url2:url2.trim()})});
+      if(!ok){addToast(message||"Comparison failed.","error");return;}
+      setResult(data);
+      addToast("Comparison complete!","success");
+    }catch(e){addToast("Could not reach backend.","error");}
+    finally{setLoading(false);}
+  };
+
+  const renderProduct=(p,isWinner)=>(
+    <div className={`compare-col${isWinner?" winner":""}`}>
+      {isWinner&&<div className="winner-badge">🏆 Better Choice</div>}
+      {p.product_image&&(
+      <img src={p.product_image} alt={p.product_name} 
+           style={{width:"100%",maxWidth:"150px",height:"150px",objectFit:"contain",
+                   borderRadius:"12px",background:"white",padding:"12px",margin:"0 auto 1rem",display:"block"}}/>
+    )}
+      <p style={{fontSize:"0.82rem",color:"var(--text2)",marginBottom:"1rem",wordBreak:"break-all"}}>{p.product_name||p.url}</p>
+      <div style={{textAlign:"center",marginBottom:"1.2rem"}}>
+        <TrustCircle score={p.trust_score}/>
+        <span className={`score-pill ${scoreClass(p.trust_score)}`} style={{marginTop:"0.5rem",display:"inline-block"}}>{classLabel(p.trust_score)}</span>
+      </div>
+      {[["⭐ Avg Rating",`${p.average_rating}/5`],["💬 Reviews",p.total_reviews],["🤖 Fake Risk",`${p.fake_review_risk}% (${p.fake_risk_label})`],["😊 Positive",`${p.sentiment?.positive?.toFixed(1)}%`],["😢 Negative",`${p.sentiment?.negative?.toFixed(1)}%`]].map(([l,v])=>(
+        <div key={l} style={{display:"flex",justifyContent:"space-between",padding:"7px 0",borderBottom:"1px solid var(--border)",fontSize:"0.85rem"}}>
+          <span style={{color:"var(--text2)"}}>{l}</span>
+          <span style={{fontWeight:600}}>{v}</span>
+        </div>
+      ))}
+      <div style={{marginTop:"1rem",padding:"0.8rem",background:"rgba(255,255,255,0.02)",borderRadius:"10px",fontSize:"0.8rem",color:"var(--text2)",lineHeight:1.6}}>{p.recommendation}</div>
+    </div>
+  );
+
+  return(
+    <div className="page">
+      <div className="page-inner">
+        <div className="page-header">
+          <h1 className="page-title">Compare Products</h1>
+          <p className="page-sub">Enter two product URLs to compare their trust profiles side by side.</p>
+        </div>
+        <div className="glass analyzer-card" style={{marginBottom:"1.5rem"}}>
+          <div className="cards-grid cards-2" style={{gap:"1rem",marginBottom:"1rem"}}>
+            <div>
+              <label className="field-label">Product 1 URL</label>
+              <input className="input" placeholder="https://amazon.in/dp/..." value={url1} onChange={e=>setUrl1(e.target.value)}/>
+            </div>
+            <div>
+              <label className="field-label">Product 2 URL</label>
+              <input className="input" placeholder="https://amazon.in/dp/..." value={url2} onChange={e=>setUrl2(e.target.value)}/>
+            </div>
+          </div>
+          <button className="btn btn-yellow" onClick={handleCompare} disabled={loading}>
+            {loading?<><span className="spinner-ring" style={{width:16,height:16,border:"2px solid rgba(0,0,0,0.2)",borderTopColor:"var(--bg)"}}/> Comparing…</>:<>⚖️ Compare Products</>}
+          </button>
+        </div>
+        {result&&(
+          <div className="fade-in">
+            <div style={{textAlign:"center",marginBottom:"1.2rem",padding:"0.9rem",background:"rgba(250,204,21,0.07)",border:"1px solid rgba(250,204,21,0.2)",borderRadius:"var(--radius)",color:"var(--accent)",fontWeight:600}}>{result.verdict}</div>
+            <div className="compare-grid">
+              {renderProduct(result.product_1,result.winner_url===result.product_1.url)}
+              {renderProduct(result.product_2,result.winner_url===result.product_2.url)}
+            </div>
+            
+            {/* Game Theory Comparison (NEW!) */}
+            {result.products && result.products[0].game_theory && (
+              <div style={{gridColumn:"1/-1",marginTop:"1rem",padding:"1rem",background:"rgba(102,126,234,0.1)",borderRadius:"10px"}}>
+                <h4 style={{fontSize:"0.9rem",marginBottom:"0.8rem",color:"var(--accent)"}}>
+                  🎮 Game-Theoretic Comparison
+                </h4>
+                <div className="cards-grid cards-2" style={{gap:"1rem"}}>
+                  {result.products.map((p,idx)=>(
+                    <div key={idx}>
+                      <div style={{fontSize:"0.8rem",color:"var(--text2)",marginBottom:"0.5rem"}}>
+                        {p.product_name}
+                      </div>
+                      <div style={{display:"grid",gap:"0.5rem"}}>
+                        <div style={{display:"flex",justifyContent:"space-between"}}>
+                          <span style={{fontSize:"0.75rem"}}>Nash Equilibria:</span>
+                          <span style={{fontWeight:600}}>{p.game_theory.nash_equilibria}</span>
+                        </div>
+                        <div style={{display:"flex",justifyContent:"space-between"}}>
+                          <span style={{fontSize:"0.75rem"}}>Optimal Strategy:</span>
+                          <span style={{fontWeight:600}}>{p.game_theory.optimal_strategy}</span>
+                        </div>
+                        <div style={{display:"flex",justifyContent:"space-between"}}>
+                          <span style={{fontSize:"0.75rem"}}>Strategic Risk:</span>
+                          <span style={{fontWeight:600}}>{p.game_theory.risk_score}%</span>
+                        </div>
+                        <div style={{display:"flex",justifyContent:"space-between"}}>
+                          <span style={{fontSize:"0.75rem"}}>Confidence:</span>
+                          <span style={{fontWeight:600}}>{p.game_theory.confidence}%</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                
+                {result.utility_difference && (
+                  <div style={{marginTop:"1rem",padding:"0.8rem",background:"rgba(250,204,21,0.15)",borderRadius:"8px"}}>
+                    <strong style={{color:"var(--accent)"}}>Expected Utility Difference:</strong> {result.utility_difference} points
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── History Page ───────────────────────────────────────────────────── */
+function HistoryPage({addToast}){
+  const [records,setRecords]=useState([]);
+  const [loading,setLoading]=useState(true);
+
+  useEffect(()=>{
+    apiFetch("/history").then(({ok,data,message})=>{
+      if(ok)setRecords(data.records||[]);
+      else addToast(message||"Failed to load history.","error");
+      setLoading(false);
+    }).catch(()=>{addToast("Server unreachable.","error");setLoading(false);});
+  },[]);
+
+  const handleDelete=async(id)=>{
+    const {ok,message}=await apiFetch(`/history/${id}`,{method:"DELETE"});
+    if(ok)setRecords(r=>r.filter(x=>x.id!==id));
+    else addToast(message||"Delete failed.","error");
+  };
+
+  if(loading)return<div className="page"><div className="loading-center"><div className="spinner-ring"/></div></div>;
+
+  return(
+    <div className="page">
+      <div className="page-inner">
+        <div className="page-header">
+          <h1 className="page-title">Analysis History</h1>
+          <p className="page-sub">{records.length} product{records.length!==1?"s":""} analysed.</p>
+        </div>
+        {records.length===0?(
+          <div className="empty-state glass"><div className="em">📭</div><p>No analyses yet.</p></div>
+        ):(
+          <div className="table-wrap" style={{maxHeight:520,overflow:"auto"}}>
+            <table>
+              <thead><tr><th>#</th><th>Product</th><th>Trust Score</th><th>Fake Risk</th><th>Classification</th><th>Date</th><th>Action</th></tr></thead>
+              <tbody>
+                {records.map((r,i)=>(
+                  <tr key={r.id}>
+                    <td style={{color:"var(--text3)",fontSize:"0.78rem"}}>{i+1}</td>
+                    <td className="url-cell"><a href={r.product_url} target="_blank" rel="noopener noreferrer" style={{color:"var(--text2)",textDecoration:"none"}}>{r.product_name||r.product_url}</a></td>
+                    <td><span className={`score-pill ${scoreClass(r.trust_score)}`}>{r.trust_score}/100</span></td>
+                    <td><span style={{fontSize:"0.82rem",color:scoreColor(100-r.fake_review_risk)}}>{r.fake_risk_label}</span></td>
+                    <td><span style={{fontSize:"0.82rem",color:scoreColor(r.trust_score)}}>{r.classification}</span></td>
+                    <td style={{color:"var(--text3)",fontSize:"0.78rem"}}>{new Date(r.analyzed_at).toLocaleDateString()}</td>
+                    <td><button className="btn btn-danger" onClick={()=>handleDelete(r.id)}>🗑 Delete</button></td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── Admin Page ─────────────────────────────────────────────────────── */
+function AdminPage({addToast}){
+  const [data,setData]=useState(null);
+  const [loading,setLoading]=useState(true);
+
+  useEffect(()=>{
+    apiFetch("/admin/stats").then(({ok,data:d,message})=>{
+      if(ok)setData(d);
+      else addToast(message||"Admin access denied.","error");
+      setLoading(false);
+    }).catch(()=>{addToast("Server unreachable.","error");setLoading(false);});
+  },[]);
+
+  if(loading)return<div className="page"><div className="loading-center"><div className="spinner-ring"/></div></div>;
+  if(!data)return<div className="page"><div className="page-inner"><p style={{color:"var(--red)"}}>Admin access required.</p></div></div>;
+
+  return(
+    <div className="page">
+      <div className="page-inner">
+        <div className="page-header">
+          <h1 className="page-title">Admin Panel</h1>
+          <p className="page-sub">Platform-wide analytics and user management.</p>
+        </div>
+        <div className="cards-grid cards-3" style={{marginBottom:"1.5rem"}}>
+          {[
+            ["👥","Total Users",data.total_users,"var(--accent)"],
+            ["🔍","Total Analyses",data.total_analyses,"var(--primary-ll)"],
+            ["📊","Avg Trust Score",`${data.avg_trust_score}/100`,scoreColor(data.avg_trust_score)],
+            ["✅","Safe Analyses",data.safe_analyses,"var(--green)"],
+            ["🚫","High Risk Analyses",data.high_risk_analyses,"var(--red)"],
+            ["🤖","Avg Fake Risk",`${data.avg_fake_risk}%`,"var(--yellow)"],
+          ].map(([icon,label,value,color],i)=>(
+            <div key={i} className="stat-card fade-up" style={{animationDelay:`${i*0.07}s`}}>
+              <div className="sc-icon">{icon}</div>
+              <div className="sc-value" style={{color}}>{value}</div>
+              <div className="sc-label">{label}</div>
+            </div>
+          ))}
+        </div>
+        {data.recent_users?.length>0&&(
+          <div>
+            <h3 style={{fontSize:"1rem",fontWeight:600,marginBottom:"1rem"}}>Recent Users</h3>
+            <div className="table-wrap">
+              <table>
+                <thead><tr><th>#</th><th>Name</th><th>Email</th><th>Role</th><th>Joined</th></tr></thead>
+                <tbody>
+                  {data.recent_users.map((u,i)=>(
+                    <tr key={u.id}>
+                      <td style={{color:"var(--text3)",fontSize:"0.78rem"}}>{i+1}</td>
+                      <td style={{fontWeight:500}}>{u.name}</td>
+                      <td style={{color:"var(--text2)",fontSize:"0.85rem"}}>{u.email}</td>
+                      <td><span className={`score-pill ${u.role==="admin"?"sp-yellow":"sp-green"}`}>{u.role}</span></td>
+                      <td style={{color:"var(--text3)",fontSize:"0.78rem"}}>{new Date(u.created_at).toLocaleDateString()}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}
+
+/* ── App ────────────────────────────────────────────────────────────── */
+function App(){
+  const [user,setUser]=useState(null);
+  const [page,setPage]=useState("landing");
+  const [toasts,setToasts]=useState([]);
+  const [checking,setChecking]=useState(true);
+
+  const addToast=useCallback((message,type="info")=>{
+    const id=Date.now();
+    setToasts(p=>[...p,{id,message,type}]);
+    setTimeout(()=>setToasts(p=>p.filter(t=>t.id!==id)),3800);
+  },[]);
+
+  // Restore session on load
+  useEffect(()=>{
+    const token=localStorage.getItem("sb_token");
+    if(token){
+      apiFetch("/me").then(({ok,data})=>{
+        if(ok){setUser(data.user);setPage("dashboard");}
+        else localStorage.removeItem("sb_token");
+        setChecking(false);
+      }).catch(()=>setChecking(false));
+    }else setChecking(false);
+  },[]);
+
+  const handleLogin=u=>{setUser(u);setPage("dashboard");};
+  const handleLogout=()=>{localStorage.removeItem("sb_token");setUser(null);setPage("landing");addToast("Logged out successfully.","info");};
+
+  useEffect(()=>{
+    if(!user&&!["landing","login","register"].includes(page))setPage("landing");
+  },[user,page]);
+
+  if(checking)return<div style={{minHeight:"100vh",display:"flex",alignItems:"center",justifyContent:"center"}}><div className="spinner-ring"/></div>;
+
+  const renderPage=()=>{
+    if(!user){
+      if(page==="login")   return <AuthPage mode="login"    setPage={setPage} onLogin={handleLogin} addToast={addToast}/>;
+      if(page==="register")return <AuthPage mode="register" setPage={setPage} onLogin={handleLogin} addToast={addToast}/>;
+      return <Landing setPage={setPage}/>;
+    }
+    switch(page){
+      case "dashboard": return <Dashboard user={user} setPage={setPage} addToast={addToast}/>;
+      case "analyze":   return <AnalyzePage addToast={addToast}/>;
+      case "compare":   return <ComparePage addToast={addToast}/>;
+      case "history":   return <HistoryPage addToast={addToast}/>;
+      case "admin":     return <AdminPage addToast={addToast}/>;
+      default:          return <Dashboard user={user} setPage={setPage} addToast={addToast}/>;
+    }
+  };
+
+  return(
+    <>
+      <ToastContainer toasts={toasts}/>
+      {user||["landing"].includes(page)?(
+        <Navbar user={user} page={page} setPage={setPage} onLogout={handleLogout}/>
+      ):null}
+      {renderPage()}
+    </>
+  );
+}
+
+ReactDOM.createRoot(document.getElementById("root")).render(<App/>);
+</script>
+</body>
+</html>
