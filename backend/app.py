@@ -370,6 +370,8 @@ def create_app() -> Flask:
                 # Extract reviews
                 review_data = fetch_reviews(url)
                 reviews = review_data["reviews"]
+                total_reviews = review_data["total_reviews"]
+                average_rating = review_data["average_rating"]
                 
                 if len(reviews) < Config.MIN_REVIEWS:
                     return error_response(f"Not enough reviews for {url}", 422)
@@ -379,26 +381,30 @@ def create_app() -> Flask:
                 grievance = detect_grievances(reviews)
                 fake = detect_fake_reviews(reviews)
                 
-                # Game theory input
+                # STEP 1: Compute preliminary trust score (for game theory input)
+                preliminary_trust = compute_trust_score(
+                    average_rating, sentiment, grievance, fake, None
+                )
+                
+                # STEP 2: Game theory with REAL trust score
                 price_val = float(review_data.get("product_price") or 100)
                 gt_input = {
-                    "trust_score": 0,
+                    "trust_score": preliminary_trust.score,  # FIXED: Real trust!
+                    "average_rating": average_rating,  # FIXED: Add rating!
                     "fake_review_risk": fake.risk_score,
                     "grievance_rate": grievance.grievance_rate,
+                    "sentiment_positive": sentiment.positive,  # FIXED: Add sentiment!
+                    "sentiment_negative": sentiment.negative,  # FIXED: Add sentiment!
                     "price": price_val,
-                    "perceived_value": price_val * (review_data["average_rating"] / 5.0),
-                    "total_reviews": review_data["total_reviews"],
+                    "perceived_value": price_val * (average_rating / 5.0),
+                    "total_reviews": total_reviews,
                 }
                 
                 gt_result = gt_analyze(gt_input)
                 
-                # Trust score
+                # STEP 3: Final trust score (with game theory)
                 trust = compute_trust_score(
-                    review_data["average_rating"], 
-                    sentiment, 
-                    grievance, 
-                    fake, 
-                    gt_result
+                    average_rating, sentiment, grievance, fake, gt_result
                 )
                 
                 # Build product data (FIXED structure to match frontend)

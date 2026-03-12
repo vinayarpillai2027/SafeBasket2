@@ -66,12 +66,8 @@ class PurchaseAnalysis:
                 "potential_downside": self.potential_downside,
                 "alternatives_suggestion": self.alternatives_suggestion,
             },
-            "nash_equilibria": [],
-            "all_outcomes": [],
-            "optimal_strategy": {
-                "buyer": self.decision,
-                "seller": "Unknown"
-            },
+            # Removed nash_equilibria to prevent React rendering issues
+            # Frontend was trying to render {buyer, seller} objects directly
             "strategic_recommendation": self._generate_strategic_rec(),
             "confidence_score": round(self.confidence, 1),
             "alternative_strategies": self._generate_alternatives(),
