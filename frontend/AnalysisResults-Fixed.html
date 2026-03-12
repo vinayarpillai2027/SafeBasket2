@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SafeBasket - Analysis Results</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+            color: #e2e8f0;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: #f59e0b;
+            margin-bottom: 10px;
+        }
+
+        .header h1 .safe { color: #e2e8f0; }
+
+        /* Loading State */
+        .loading {
+            display: block;
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .spinner {
+            border: 4px solid rgba(148, 163, 184, 0.1);
+            border-top: 4px solid #f59e0b;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 20px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .loading p {
+            color: #94a3b8;
+            font-size: 1.1rem;
+        }
+
+        /* Error State */
+        .error {
+            display: none;
+            text-align: center;
+            padding: 40px;
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 12px;
+            margin: 40px auto;
+            max-width: 600px;
+        }
+
+        .error h2 {
+            color: #f87171;
+            margin-bottom: 12px;
+        }
+
+        .error p {
+            color: #cbd5e1;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #f59e0b, #eab308);
+            color: #0f172a;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: transform 0.2s;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .btn:hover {
+            transform: scale(1.05);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(30, 41, 59, 0.6);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            border-radius: 16px;
+            padding: 24px;
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+
+        .card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.3);
+        }
+
+        .card h3 {
+            color: #cbd5e1;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 16px;
+        }
+
+        /* Trust Score Circle */
+        .trust-score-container {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .trust-circle {
+            position: relative;
+            width: 200px;
+            height: 200px;
+            margin-bottom: 20px;
+        }
+
+        .trust-circle svg {
+            transform: rotate(-90deg);
+        }
+
+        .trust-circle-bg {
+            fill: none;
+            stroke: rgba(148, 163, 184, 0.1);
+            stroke-width: 12;
+        }
+
+        .trust-circle-fill {
+            fill: none;
+            stroke-width: 12;
+            stroke-linecap: round;
+            transition: stroke-dashoffset 1s ease;
+        }
+
+        .trust-score-text {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            text-align: center;
+        }
+
+        .trust-score-value {
+            font-size: 3rem;
+            font-weight: bold;
+        }
+
+        .trust-score-label {
+            font-size: 0.875rem;
+            color: #94a3b8;
+        }
+
+        .classification-badge {
+            display: inline-block;
+            padding: 8px 16px;
+            border-radius: 20px;
+            font-weight: 600;
+            font-size: 0.875rem;
+            margin-top: 10px;
+        }
+
+        .badge-safe {
+            background: rgba(34, 197, 94, 0.2);
+            color: #4ade80;
+            border: 1px solid rgba(34, 197, 94, 0.3);
+        }
+
+        .badge-moderate {
+            background: rgba(251, 191, 36, 0.2);
+            color: #fbbf24;
+            border: 1px solid rgba(251, 191, 36, 0.3);
+        }
+
+        .badge-high-risk {
+            background: rgba(239, 68, 68, 0.2);
+            color: #f87171;
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+
+        /* Stats */
+        .stat-value {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            color: #94a3b8;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+        }
+
+        .positive { color: #4ade80; }
+        .negative { color: #f87171; }
+        .warning { color: #fbbf24; }
+
+        /* Sentiment Breakdown */
+        .sentiment-bar {
+            margin-bottom: 16px;
+        }
+
+        .sentiment-label {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+        }
+
+        .bar-container {
+            height: 8px;
+            background: rgba(148, 163, 184, 0.1);
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            transition: width 0.8s ease;
+            border-radius: 4px;
+        }
+
+        /* Risk Alerts */
+        .risk-alerts-grid {
+            display: grid;
+            gap: 12px;
+        }
+
+        .risk-alert-card {
+            background: rgba(15, 23, 42, 0.6);
+            border-left: 4px solid;
+            border-radius: 8px;
+            padding: 16px;
+            transition: transform 0.2s;
+        }
+
+        .risk-alert-card:hover {
+            transform: translateX(4px);
+        }
+
+        .risk-alert-card.red { border-color: #ef4444; background: rgba(239, 68, 68, 0.05); }
+        .risk-alert-card.yellow { border-color: #f59e0b; background: rgba(245, 158, 11, 0.05); }
+        .risk-alert-card.green { border-color: #22c55e; background: rgba(34, 197, 94, 0.05); }
+
+        .alert-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        .severity-badge {
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+        }
+
+        .severity-badge.red { background: rgba(239, 68, 68, 0.2); color: #f87171; }
+        .severity-badge.yellow { background: rgba(245, 158, 11, 0.2); color: #fbbf24; }
+        .severity-badge.green { background: rgba(34, 197, 94, 0.2); color: #4ade80; }
+
+        .alert-header h4 {
+            flex: 1;
+            color: #e2e8f0;
+            font-size: 1rem;
+        }
+
+        .mention-count {
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+
+        .example-text {
+            font-style: italic;
+            color: #cbd5e1;
+            margin-bottom: 8px;
+            padding: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 4px;
+            font-size: 0.875rem;
+        }
+
+        .recommendation {
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+
+        .product-name {
+            color: #cbd5e1;
+            margin-bottom: 20px;
+            font-size: 1.2rem;
+            text-align: center;
+        }
+
+        .timeline-warning {
+            background: rgba(239, 68, 68, 0.1);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+            border-radius: 8px;
+            padding: 16px;
+            margin-bottom: 20px;
+            color: #f87171;
+            font-weight: 600;
+        }
+
+        .value-container, .credibility-container {
+            text-align: center;
+        }
+
+        .value-score, .cred-score {
+            font-size: 2.5rem;
+            font-weight: bold;
+            margin: 20px 0;
+        }
+
+        .value-stats {
+            display: flex;
+            justify-content: center;
+            gap: 30px;
+            margin-top: 20px;
+        }
+
+        .recommendations-list {
+            list-style: none;
+            margin-bottom: 20px;
+        }
+
+        .recommendations-list li {
+            padding: 12px;
+            margin-bottom: 8px;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 8px;
+            border-left: 3px solid #fbbf24;
+        }
+
+        .action-items-list {
+            list-style: none;
+        }
+
+        .action-item {
+            padding: 10px;
+            margin-bottom: 6px;
+            background: rgba(15, 23, 42, 0.4);
+            border-radius: 6px;
+            color: #94a3b8;
+            font-size: 0.875rem;
+        }
+
+        #results {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🛒 <span class="safe">Safe</span>Basket</h1>
+            <p style="color: #94a3b8;">Product Intelligence Analysis</p>
+        </div>
+
+        <!-- Loading State -->
+        <div class="loading" id="loading">
+            <div class="spinner"></div>
+            <p>Analyzing product reviews...</p>
+        </div>
+
+        <!-- Error State -->
+        <div class="error" id="error">
+            <h2>⚠️ No Analysis Data</h2>
+            <p id="errorMessage">No analysis data found. Please analyze a product first.</p>
+            <a href="analyze.html" class="btn">Go to Analyze Page</a>
+        </div>
+
+        <!-- Results -->
+        <div id="results">
+            <div class="product-name" id="productName"></div>
+            <div id="timelineWarning"></div>
+
+            <!-- Trust Score + Summary -->
+            <div class="grid">
+                <div class="card trust-score-container">
+                    <h3>Trust Score</h3>
+                    <div class="trust-circle">
+                        <svg width="200" height="200">
+                            <circle class="trust-circle-bg" cx="100" cy="100" r="90"></circle>
+                            <circle class="trust-circle-fill" id="trustCircle" cx="100" cy="100" r="90"></circle>
+                        </svg>
+                        <div class="trust-score-text">
+                            <div class="trust-score-value" id="trustScore">0</div>
+                            <div class="trust-score-label">/ 100</div>
+                        </div>
+                    </div>
+                    <div class="classification-badge" id="classification">Analyzing...</div>
+                    <p style="color: #94a3b8; margin-top: 12px; font-size: 0.875rem;" id="date"></p>
+                </div>
+
+                <div class="card">
+                    <h3>Product Summary</h3>
+                    <div class="grid" style="grid-template-columns: 1fr 1fr; gap: 16px;">
+                        <div>
+                            <div class="stat-value" id="totalReviews">0</div>
+                            <div class="stat-label">Total Reviews</div>
+                        </div>
+                        <div>
+                            <div class="stat-value" id="avgRating">0★</div>
+                            <div class="stat-label">Avg Rating</div>
+                        </div>
+                        <div>
+                            <div class="stat-value positive" id="positivePercent">0%</div>
+                            <div class="stat-label">Positive</div>
+                        </div>
+                        <div>
+                            <div class="stat-value negative" id="negativePercent">0%</div>
+                            <div class="stat-label">Negative</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="card">
+                    <h3>Fake Review Risk</h3>
+                    <div style="text-align: center; margin: 20px 0;">
+                        <div class="stat-value warning" id="fakeRisk">0%</div>
+                        <div class="stat-label" id="fakeLabel">Low</div>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar-fill" id="fakeBar" style="background: #f59e0b;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sentiment -->
+            <div class="card">
+                <h3>Sentiment Breakdown</h3>
+                <div class="sentiment-bar">
+                    <div class="sentiment-label">
+                        <span>Positive</span>
+                        <span id="sentimentPositive">0%</span>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar-fill" id="positiveBar" style="background: #4ade80;"></div>
+                    </div>
+                </div>
+                <div class="sentiment-bar">
+                    <div class="sentiment-label">
+                        <span>Neutral</span>
+                        <span id="sentimentNeutral">0%</span>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar-fill" id="neutralBar" style="background: #fbbf24;"></div>
+                    </div>
+                </div>
+                <div class="sentiment-bar">
+                    <div class="sentiment-label">
+                        <span>Negative</span>
+                        <span id="sentimentNegative">0%</span>
+                    </div>
+                    <div class="bar-container">
+                        <div class="bar-fill" id="negativeBar" style="background: #f87171;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Risk Alerts -->
+            <div class="card">
+                <h3>🚨 Risk Alerts - Detailed Issues</h3>
+                <div class="risk-alerts-grid" id="riskAlertsGrid"></div>
+            </div>
+
+            <!-- Value + Credibility -->
+            <div class="grid">
+                <div class="card value-container">
+                    <h3>💰 Value for Money</h3>
+                    <div class="value-score" id="valueScore">-</div>
+                    <div id="valueVerdict" style="color: #cbd5e1;">-</div>
+                    <div class="value-stats">
+                        <div>👍 <span id="valuePositive">0</span></div>
+                        <div>👎 <span id="valueNegative">0</span></div>
+                    </div>
+                </div>
+
+                <div class="card credibility-container">
+                    <h3>✓ Reviewer Credibility</h3>
+                    <div class="cred-score" id="credScore">-</div>
+                    <div id="credAssessment" style="color: #cbd5e1;">-</div>
+                </div>
+            </div>
+
+            <!-- Recommendations -->
+            <div class="card">
+                <h3>💡 Smart Recommendations</h3>
+                <ul class="recommendations-list" id="recommendationsList"></ul>
+                <h4 style="color: #cbd5e1; margin-top: 20px; margin-bottom: 12px;">📋 Action Items:</h4>
+                <ul class="action-items-list" id="actionItemsList"></ul>
+            </div>
+
+            <!-- Explanation -->
+            <div class="card">
+                <h3>📊 Detailed Explanation</h3>
+                <p id="explanation" style="line-height: 1.8; color: #cbd5e1;"></p>
+            </div>
+
+            <div style="text-align: center; margin-top: 40px;">
+                <a href="analyze.html" class="btn">Analyze Another Product</a>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Get URL parameters
+        const urlParams = new URLSearchParams(window.location.search);
+        const analysisId = urlParams.get('id');
+
+        // Check sessionStorage for data
+        let analysisData = sessionStorage.getItem('analysisData');
+
+        function showError(message) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('error').style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        function displayAnalysis(data) {
+            document.getElementById('loading').style.display = 'none';
+            document.getElementById('results').style.display = 'block';
+
+            // Product Name
+            document.getElementById('productName').textContent = data.product_name || 'Product Analysis';
+
+            // Timeline Warning
+            if (data.timeline_analysis && data.timeline_analysis.suspicious) {
+                document.getElementById('timelineWarning').innerHTML = `
+                    <div class="timeline-warning">⚠️ ${data.timeline_analysis.reason}</div>
+                `;
+            }
+
+            // Trust Score
+            const trustScore = data.trust_score || 0;
+            document.getElementById('trustScore').textContent = trustScore.toFixed(1);
+            document.getElementById('date').textContent = new Date().toLocaleDateString();
+
+            // Classification
+            const classification = data.classification || 'Unknown';
+            const classElem = document.getElementById('classification');
+            classElem.textContent = classification;
+            
+            if (classification.includes('Safe')) {
+                classElem.className = 'classification-badge badge-safe';
+            } else if (classification.includes('Moderate')) {
+                classElem.className = 'classification-badge badge-moderate';
+            } else {
+                classElem.className = 'classification-badge badge-high-risk';
+            }
+
+            // Trust Circle
+            const circumference = 2 * Math.PI * 90;
+            const progress = (trustScore / 100) * circumference;
+            const circle = document.getElementById('trustCircle');
+            circle.style.strokeDasharray = circumference;
+            circle.style.strokeDashoffset = circumference - progress;
+            
+            if (trustScore >= 70) {
+                circle.style.stroke = '#4ade80';
+                document.getElementById('trustScore').style.color = '#4ade80';
+            } else if (trustScore >= 40) {
+                circle.style.stroke = '#fbbf24';
+                document.getElementById('trustScore').style.color = '#fbbf24';
+            } else {
+                circle.style.stroke = '#f87171';
+                document.getElementById('trustScore').style.color = '#f87171';
+            }
+
+            // Summary Stats
+            document.getElementById('totalReviews').textContent = data.total_reviews || 0;
+            document.getElementById('avgRating').textContent = (data.average_rating || 0).toFixed(1) + '★';
+            document.getElementById('positivePercent').textContent = (data.sentiment?.positive || 0) + '%';
+            document.getElementById('negativePercent').textContent = (data.sentiment?.negative || 0) + '%';
+
+            // Fake Risk
+            const fakeRisk = data.fake_review_risk || data.fake_reviews?.risk_score || 0;
+            document.getElementById('fakeRisk').textContent = fakeRisk.toFixed(1) + '%';
+            document.getElementById('fakeLabel').textContent = data.fake_risk_label || data.fake_reviews?.risk_label || 'Low';
+            document.getElementById('fakeBar').style.width = fakeRisk + '%';
+
+            // Sentiment
+            document.getElementById('sentimentPositive').textContent = (data.sentiment?.positive || 0) + '%';
+            document.getElementById('sentimentNeutral').textContent = (data.sentiment?.neutral || 0) + '%';
+            document.getElementById('sentimentNegative').textContent = (data.sentiment?.negative || 0) + '%';
+            
+            setTimeout(() => {
+                document.getElementById('positiveBar').style.width = (data.sentiment?.positive || 0) + '%';
+                document.getElementById('neutralBar').style.width = (data.sentiment?.neutral || 0) + '%';
+                document.getElementById('negativeBar').style.width = (data.sentiment?.negative || 0) + '%';
+            }, 100);
+
+            // Detailed Grievances
+            const riskAlertsGrid = document.getElementById('riskAlertsGrid');
+            riskAlertsGrid.innerHTML = '';
+            
+            if (data.detailed_grievances && data.detailed_grievances.grievances && data.detailed_grievances.grievances.length > 0) {
+                data.detailed_grievances.grievances.forEach(g => {
+                    const severityColor = g.severity === 'High' ? 'red' : g.severity === 'Medium' ? 'yellow' : 'green';
+                    
+                    const alertCard = document.createElement('div');
+                    alertCard.className = `risk-alert-card ${severityColor}`;
+                    alertCard.innerHTML = `
+                        <div class="alert-header">
+                            <span class="severity-badge ${severityColor}">${g.severity}</span>
+                            <h4>${g.category}</h4>
+                            <span class="mention-count">${g.mentions} mentions</span>
+                        </div>
+                        <div class="example-text">"${g.examples[0] || 'No specific examples available'}"</div>
+                        <div class="recommendation">${g.recommendation}</div>
+                    `;
+                    riskAlertsGrid.appendChild(alertCard);
+                });
+            } else {
+                riskAlertsGrid.innerHTML = '<p style="color: #94a3b8; text-align: center;">No major issues detected ✓</p>';
+            }
+
+            // Value Analysis
+            if (data.value_analysis) {
+                const valueScore = data.value_analysis.value_score || 0;
+                document.getElementById('valueScore').textContent = valueScore + '/100';
+                document.getElementById('valueScore').style.color = valueScore >= 60 ? '#4ade80' : valueScore >= 40 ? '#fbbf24' : '#f87171';
+                document.getElementById('valueVerdict').textContent = data.value_analysis.value_verdict || '-';
+                document.getElementById('valuePositive').textContent = data.value_analysis.positive_mentions || 0;
+                document.getElementById('valueNegative').textContent = data.value_analysis.negative_mentions || 0;
+            }
+
+            // Reviewer Credibility
+            if (data.reviewer_credibility) {
+                const credScore = data.reviewer_credibility.credibility_score || 0;
+                document.getElementById('credScore').textContent = credScore.toFixed(1) + '/100';
+                document.getElementById('credScore').style.color = credScore >= 60 ? '#4ade80' : credScore >= 40 ? '#fbbf24' : '#f87171';
+                document.getElementById('credAssessment').textContent = data.reviewer_credibility.assessment || '-';
+            }
+
+            // Smart Recommendations
+            const recsList = document.getElementById('recommendationsList');
+            const actionsList = document.getElementById('actionItemsList');
+            recsList.innerHTML = '';
+            actionsList.innerHTML = '';
+
+            if (data.smart_recommendations) {
+                data.smart_recommendations.summary_recommendations?.forEach(rec => {
+                    const li = document.createElement('li');
+                    li.textContent = rec;
+                    recsList.appendChild(li);
+                });
+
+                data.smart_recommendations.action_items?.forEach(action => {
+                    const li = document.createElement('li');
+                    li.className = 'action-item';
+                    li.textContent = '→ ' + action;
+                    actionsList.appendChild(li);
+                });
+            }
+
+            // Explanation
+            document.getElementById('explanation').textContent = data.explanation || 'Analysis complete.';
+        }
+
+        // Load data on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            if (analysisData) {
+                // Data from sessionStorage
+                try {
+                    const data = JSON.parse(analysisData);
+                    displayAnalysis(data);
+                    sessionStorage.removeItem('analysisData'); // Clear after use
+                } catch (e) {
+                    console.error('Error parsing analysis data:', e);
+                    showError('Invalid analysis data. Please try analyzing again.');
+                }
+            } else if (analysisId) {
+                // Fetch from API using ID
+                const token = localStorage.getItem('token');
+                if (!token) {
+                    showError('Please login to view analysis results.');
+                    return;
+                }
+
+                fetch(`http://localhost:5000/history`, {
+                    headers: {
+                        'Authorization': `Bearer ${token}`
+                    }
+                })
+                .then(res => res.json())
+                .then(result => {
+                    if (result.status === 'success') {
+                        const analysis = result.data.records.find(r => r.id == analysisId);
+                        if (analysis) {
+                            displayAnalysis(analysis);
+                        } else {
+                            showError('Analysis not found.');
+                        }
+                    } else {
+                        showError(result.message || 'Failed to load analysis.');
+                    }
+                })
+                .catch(err => {
+                    console.error('Error fetching analysis:', err);
+                    showError('Failed to load analysis. Please try again.');
+                });
+            } else {
+                showError('No analysis data found. Please analyze a product first.');
+            }
+        });
+    </script>
+</body>
+</html>

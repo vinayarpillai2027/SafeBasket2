@@ -1,0 +1,5 @@
+FROM nginx:alpine
+# Since the context is now the frontend folder, we just use the filename
+COPY SafeBasket.html /usr/share/nginx/html/index.html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
